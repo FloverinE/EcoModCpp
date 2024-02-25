@@ -20,6 +20,7 @@ private slots:
     void on_setup_button_clicked();
     void on_go_button_clicked();
     void setup_map();
+    void setup_trees();
 
 private:
     Ui::MainWindow *ui;

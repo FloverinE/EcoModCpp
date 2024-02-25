@@ -9,8 +9,7 @@ public:
     patch();
 
     patch(std::vector<int> x_y_cor,
-          int N_seedlings,
-          int dist_to_tree);
+          int N_seedlings);
     get_seedlings();
     update_N_seedlings(int count);
     get_coords();

@@ -49,6 +49,9 @@
       <height>25</height>
      </rect>
     </property>
+    <property name="maximum">
+     <number>500</number>
+    </property>
    </widget>
    <widget class="QChartView" name="main_map">
     <property name="geometry">

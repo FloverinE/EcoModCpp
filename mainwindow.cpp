@@ -1,8 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-//#include "patch.h"
-//#include "landscape.h"
-//#include "tree.h"
+#include "patch.h"
+#include "landscape.h"
+#include "tree.h"
 #include <iostream>
 #include <random>
 #include <vector>
@@ -22,6 +22,8 @@ MainWindow::MainWindow(QWidget *parent)
 const int xSize = 500;
 const int ySize = 500;
 
+QRgb color_tree_base = qRgb(165,42,42); // brown color
+
 void MainWindow::setup_map() {
     scene = new QGraphicsScene;
     // and hook the scene to main_map
@@ -34,11 +36,24 @@ void MainWindow::setup_map() {
     scene->addPixmap(QPixmap::fromImage(image));
 }
 
+
+
 void MainWindow::on_setup_button_clicked()
 {
     setup_map();
+    setup_trees();
 }
+void MainWindow::setup_trees() {
+    int N_trees = ui->N_trees_spinBox->value();
+    tree trees[N_trees];
+    for (int i = 0; i < N_trees; ++i) {
+        trees[i].x_y_cor = {rand() % xSize, rand() % ySize};
+        image.setPixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1], color_tree_base);
+    }
+    cout << N_trees << endl;
+    scene->addPixmap(QPixmap::fromImage(image));
 
+}
 
 void MainWindow::on_go_button_clicked()
 {

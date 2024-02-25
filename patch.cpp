@@ -4,12 +4,10 @@
 patch::patch(){}
 
 patch::patch(std::vector<int> x_y_cor,
-             int N_seedlings,
-             int dist_to_tree)
+             int N_seedlings)
 {
     this -> x_y_cor;
     this -> N_seedlings;
-    this -> dist_to_tree;
 }
 
 patch::update_N_seedlings(int count) {
