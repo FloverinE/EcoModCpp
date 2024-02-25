@@ -12,17 +12,17 @@ public:
          std::vector<int> x_y_cor,
          char species,
          int dispersal_factor,
-         int seed_production
+         int max_seed_production
          );
     int id;
     std::vector<int> x_y_cor;
     char species;
+    int max_seed_production;
+    int dispersal_factor;
     update_species_params();
 
 
 private:
-    int seed_production;
-    int dispersal_factor;
              // species of tree, "b" for birch, "o" for oak
 };
 

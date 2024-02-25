@@ -22,9 +22,9 @@ MainWindow::MainWindow(QWidget *parent)
 const int xSize = 500;
 const int ySize = 500;
 
-QRgb color_tree_base = qRgb(165,42,42); // brown color
-QRgb color_birch = qRgb(255, 255, 255); // white color
+QRgb color_birch = qRgb(165,42,42); // brown color
 QRgb color_oak = qRgb(0, 128, 0); // green color
+QRgb color_saplings = qRgb(255, 255, 255); // white color
 
 void MainWindow::setup_map() {
     scene = new QGraphicsScene;
@@ -72,21 +72,28 @@ void MainWindow::setup_trees() {
 
 }
 
+std::vector<tree> trees;
 void MainWindow::perform_dispersal() {
-    int N_trees = ui->N_trees_spinBox->value();
-
-    for (int i = 0; i < N_trees; ++i) {
-
-        double angle = 2 * M_PI * i / numPoints;
-        offset_x = trees[i].dispersal_factor * cos(direction);
-        offset_y = trees[i].dispersal_factor * sin(direction);
-
+    //write an auto loop for tree_ids
+    for (const auto& tree_id : tree_ids) {
+//        if (tree.id == tree_id) {
+            int real_seed_production = trees[tree_id].max_seed_production / 50;
+            std::cout << real_seed_production << std::endl;
+            for (int i = 0; i < real_seed_production; ++i) {
+                double direction = 2 * M_PI * i / real_seed_production;
+                int offset_x = trees[i].dispersal_factor * cos(direction);
+                int offset_y = trees[i].dispersal_factor * sin(direction);
+                image.setPixel(trees[i].x_y_cor[0] + offset_x, trees[i].x_y_cor[1] + offset_y, color_saplings);
+            }
+//        }
+        std::cout << "Tree ID: " << tree_id << std::endl;
     }
+    scene->addPixmap(QPixmap::fromImage(image));
 }
 
 void MainWindow::on_go_button_clicked()
 {
-
+    perform_dispersal();
 }
 
 MainWindow::~MainWindow()
