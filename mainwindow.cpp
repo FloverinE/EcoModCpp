@@ -80,27 +80,26 @@ void MainWindow::setup_trees() {
 }
 
 void MainWindow::perform_dispersal() {
-    std::cout << trees[1].max_seed_production << std::endl;
+//    std::cout << trees[1].max_seed_production << std::endl;
 
-//    for (const auto& tree_id : tree_ids) {
-////        if (tree.id == tree_id) {
-//            int real_seed_production = trees[tree_id].max_seed_production / 50;
-//            std::cout << real_seed_production << std::endl;
-//            for (int i = 0; i < real_seed_production; ++i) {
-//                double direction = 2 * M_PI * i / real_seed_production;
-//                int offset_x = trees[i].dispersal_factor * cos(direction);
-//                int offset_y = trees[i].dispersal_factor * sin(direction);
-//                image.setPixel(trees[i].x_y_cor[0] + offset_x, trees[i].x_y_cor[1] + offset_y, color_saplings);
-//            }
-////        }
-//        std::cout << "Tree ID: " << tree_id << std::endl;
-//    }
-//    scene->addPixmap(QPixmap::fromImage(image));
+    for (const auto&  t : trees) {
+//        if (tree.id == tree_id) {
+            int real_seed_production = t.max_seed_production / 50;
+            std::cout << real_seed_production << std::endl;
+            for (int i = 0; i < real_seed_production; ++i) {
+                double direction = 2 * M_PI * i / real_seed_production;
+                int offset_x = t.dispersal_factor * cos(direction);
+                int offset_y = t.dispersal_factor * sin(direction);
+                image.setPixel(t.x_y_cor[0] + offset_x, t.x_y_cor[1] + offset_y, color_saplings);
+            }
+//        }
+    }
+    scene->addPixmap(QPixmap::fromImage(image));
 }
 
 void MainWindow::on_go_button_clicked()
 {
-//    perform_dispersal();
+    perform_dispersal();
 }
 
 MainWindow::~MainWindow()

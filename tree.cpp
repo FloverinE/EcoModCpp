@@ -20,10 +20,10 @@ tree::tree(
 
 tree::update_species_params() {
     if (species == 'b') {
-        dispersal_factor = 1;
+        dispersal_factor = 20;
         max_seed_production = 100;
     } else if (species == 'o') {
-        dispersal_factor = 2;
+        dispersal_factor = 40;
         max_seed_production = 200;
     }
 }
