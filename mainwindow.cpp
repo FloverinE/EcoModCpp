@@ -23,6 +23,8 @@ const int xSize = 500;
 const int ySize = 500;
 
 QRgb color_tree_base = qRgb(165,42,42); // brown color
+QRgb color_birch = qRgb(255, 255, 255); // white color
+QRgb color_oak = qRgb(0, 128, 0); // green color
 
 void MainWindow::setup_map() {
     scene = new QGraphicsScene;
@@ -44,21 +46,24 @@ void MainWindow::on_setup_button_clicked()
     setup_trees();
 }
 
-
+std::vector<int> tree_ids;
 void MainWindow::setup_trees() {
     int N_trees = ui->N_trees_spinBox->value();
     double species_ratio = ui->species_ratio_spinBox->value();
     int N_birch_trees = N_trees * species_ratio;
-    int N_oak_trees = N_trees - N_birch_trees;
+//    int N_oak_trees = N_trees - N_birch_trees; // not used since if_else
     tree trees[N_trees];
     for (int i = 0; i < N_trees; ++i) {
         trees[i].x_y_cor = {rand() % xSize, rand() % ySize};
-        image.setPixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1], color_tree_base);
         if (i <= N_birch_trees){
             trees[i].species = 'b';
+            image.setPixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1], color_birch);
         } else {
             trees[i].species = 'o';
+            image.setPixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1], color_oak);
         }
+        trees[i].id = i;
+        tree_ids.push_back(i);
         trees[i].update_species_params();
     }
 
@@ -67,9 +72,14 @@ void MainWindow::setup_trees() {
 
 }
 
-void Mainwindow::perform_dispersal() {
+void MainWindow::perform_dispersal() {
+    int N_trees = ui->N_trees_spinBox->value();
+
     for (int i = 0; i < N_trees; ++i) {
 
+        double angle = 2 * M_PI * i / numPoints;
+        offset_x = trees[i].dispersal_factor * cos(direction);
+        offset_y = trees[i].dispersal_factor * sin(direction);
 
     }
 }

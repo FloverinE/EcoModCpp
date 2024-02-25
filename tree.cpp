@@ -6,10 +6,12 @@ tree::tree()
 }
 
 tree::tree(
+    int id,
     std::vector<int> x_y_cor,
     char species,
     int dispersal_factor,
     int seed_production){
+    this -> id;
     this -> x_y_cor;
     this -> species;
     this -> dispersal_factor;
