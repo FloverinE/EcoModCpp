@@ -21,6 +21,7 @@ private slots:
     void on_go_button_clicked();
     void setup_map();
     void setup_trees();
+    void setup_patches();
     void perform_dispersal();
 
 private:

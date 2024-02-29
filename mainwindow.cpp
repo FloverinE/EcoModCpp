@@ -6,7 +6,8 @@
 #include <iostream>
 #include <random>
 #include <vector>
-#include <QImage>  // Include the necessary header file
+#include <QImage>
+#include <string>
 using namespace std;
 
 MainWindow::MainWindow(QWidget *parent)
@@ -19,8 +20,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 // setup procedure
 // define the size of the map
-const int xSize = 500;
-const int ySize = 500;
+const int x_size = 500;
+const int y_size = 500;
 
 QRgb color_birch = qRgb(165,42,42); // brown color
 QRgb color_oak = qRgb(0, 128, 0); // green color
@@ -32,8 +33,8 @@ void MainWindow::setup_map() {
     ui->main_map->setScene(scene);
 
     // declare and initialize an image
-    ui->main_map->resize(xSize, ySize);
-    image = QImage(xSize, ySize, QImage::Format_RGB32);
+    ui->main_map->resize(x_size, y_size);
+    image = QImage(x_size, y_size, QImage::Format_RGB32);
     image.fill(Qt::black);
     scene->addPixmap(QPixmap::fromImage(image));
 }
@@ -43,6 +44,7 @@ void MainWindow::setup_map() {
 void MainWindow::on_setup_button_clicked()
 {
     setup_map();
+    setup_patches();
     setup_trees();
 }
 
@@ -59,7 +61,7 @@ void MainWindow::setup_trees() {
 //    tree trees[N_trees];
     for (int i = 0; i < N_trees; ++i) {
         trees.emplace_back(i, std::vector<int>{}, 'b', 1, 10);
-        trees[i].x_y_cor = {rand() % xSize, rand() % ySize};
+        trees[i].x_y_cor = {rand() % x_size, rand() % y_size};
         if (i <= N_birch_trees){
             trees[i].species = 'b';
             image.setPixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1], color_birch);
@@ -76,26 +78,48 @@ void MainWindow::setup_trees() {
         std::cout << "Tree ID: " << t.id << ", Species: " << t.species << std::endl;
     }
     scene->addPixmap(QPixmap::fromImage(image));
-
 }
 
-void MainWindow::perform_dispersal() {
-//    std::cout << trees[1].max_seed_production << std::endl;
+std::vector<patch> patches;
 
-    for (const auto&  t : trees) {
-//        if (tree.id == tree_id) {
-            int real_seed_production = t.max_seed_production / 50;
-            std::cout << real_seed_production << std::endl;
-            for (int i = 0; i < real_seed_production; ++i) {
-                double direction = 2 * M_PI * i / real_seed_production;
-                int offset_x = t.dispersal_factor * cos(direction);
-                int offset_y = t.dispersal_factor * sin(direction);
-                image.setPixel(t.x_y_cor[0] + offset_x, t.x_y_cor[1] + offset_y, color_saplings);
+void MainWindow::setup_patches() {
+    patches.clear();
+    for (int i = 0; i < x_size; i++) {
+        for (int j = 0; j < y_size; j++) {
+            patches.emplace_back(std::to_string(i) + "_" + std::to_string(j), std::vector<int>{i, j}, 0);
+//            cout << std::to_string(i) + "_" + std::to_string(j) << endl;
+        }
+    }
+}
+
+
+
+void MainWindow::perform_dispersal() {
+    for (const auto& t : trees) {
+        int real_seed_production = t.max_seed_production / 50;
+        std::cout << real_seed_production << std::endl;
+        for (int i = 0; i < real_seed_production; ++i) {
+            double direction = 2 * M_PI * i / real_seed_production;
+            int offset_x = static_cast<int>(t.dispersal_factor * cos(direction));
+            int offset_y = static_cast<int>(t.dispersal_factor * sin(direction));
+
+            int new_x = t.x_y_cor[0] + offset_x;    // calculate the new x coordinate where the seedling will be placed
+            int new_y = t.x_y_cor[1] + offset_y;    // and calculate the new y coordinate
+
+            image.setPixel(new_x, new_y, color_saplings);   // set the pixel to white
+
+            string patch_coord = to_string(new_x) + "_" + to_string(new_y);     // create a string with the coordinates of the patch
+            for (auto& p : patches) {
+                if (p.patch_id == patch_coord) {
+                    p.update_N_seedlings(1);            // update the number of seedlings in the patch
+                    cout << p.get_seedlings() << endl;
+                }
             }
-//        }
+        }
     }
     scene->addPixmap(QPixmap::fromImage(image));
 }
+
 
 void MainWindow::on_go_button_clicked()
 {

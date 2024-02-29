@@ -1,11 +1,14 @@
 #include "patch.h"
 #include <vector>
+#include <string>
 
 patch::patch(){}
 
-patch::patch(std::vector<int> x_y_cor,
+patch::patch(std::string patch_id,
+             std::vector<int> x_y_cor,
              int N_seedlings)
 {
+    this -> patch_id;
     this -> x_y_cor;
     this -> N_seedlings;
 }
