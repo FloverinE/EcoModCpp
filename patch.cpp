@@ -17,7 +17,7 @@ patch::update_N_seedlings(int count) {
     N_seedlings += count;
 }
 
-patch::get_seedlings(){
+patch::get_N_seedlings(){
     return N_seedlings;
 }
 patch::get_coords(){

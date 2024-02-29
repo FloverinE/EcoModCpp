@@ -11,7 +11,7 @@ public:
     patch(std::string patch_id,
           std::vector<int> x_y_cor,
           int N_seedlings);
-    get_seedlings();
+    get_N_seedlings();
     update_N_seedlings(int count);
     get_coords();
     std::string patch_id;

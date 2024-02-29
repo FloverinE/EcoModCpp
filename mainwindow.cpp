@@ -107,12 +107,14 @@ void MainWindow::perform_dispersal() {
             int new_y = t.x_y_cor[1] + offset_y;    // and calculate the new y coordinate
 
             image.setPixel(new_x, new_y, color_saplings);   // set the pixel to white
-
             string patch_coord = to_string(new_x) + "_" + to_string(new_y);     // create a string with the coordinates of the patch
+            cout << patches[10].get_N_seedlings() << endl;
             for (auto& p : patches) {
-                if (p.patch_id == patch_coord) {
+                if (p.patch_id == patch_coord) {        // find the patch with the same coordinates
+                    cout << p.get_N_seedlings() << endl;
+                    cout << "patchid " + p.patch_id << endl;
                     p.update_N_seedlings(1);            // update the number of seedlings in the patch
-                    cout << p.get_seedlings() << endl;
+//                    cout << p.get_N_seedlings() << endl;
                 }
             }
         }
