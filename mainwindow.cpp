@@ -8,6 +8,8 @@
 #include <vector>
 #include <QImage>
 #include <string>
+#include <unordered_map>
+
 using namespace std;
 
 MainWindow::MainWindow(QWidget *parent)
@@ -17,11 +19,14 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
 }
-
-// setup procedure
 // define the size of the map
-const int x_size = 500;
-const int y_size = 500;
+const int x_size = 50;
+const int y_size = 50;
+
+std::random_device rd;
+std::mt19937 gen(rd());
+std::uniform_int_distribution<int> dist_x(0, x_size - 1);
+std::uniform_int_distribution<int> dist_y(0, y_size - 1);
 
 QRgb color_birch = qRgb(165,42,42); // brown color
 QRgb color_oak = qRgb(0, 128, 0); // green color
@@ -61,7 +66,7 @@ void MainWindow::setup_trees() {
 //    tree trees[N_trees];
     for (int i = 0; i < N_trees; ++i) {
         trees.emplace_back(i, std::vector<int>{}, 'b', 1, 10);
-        trees[i].x_y_cor = {rand() % x_size, rand() % y_size};
+        trees[i].x_y_cor = {dist_x(gen), dist_y(gen)};
         if (i <= N_birch_trees){
             trees[i].species = 'b';
             image.setPixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1], color_birch);
@@ -81,46 +86,69 @@ void MainWindow::setup_trees() {
 }
 
 std::vector<patch> patches;
+std::unordered_map<std::string, patch*> patchMap;  // Map to efficiently look up patches by coordinates
+
 
 void MainWindow::setup_patches() {
     patches.clear();
+    patchMap.clear();  // Clear the map before repopulating
+
     for (int i = 0; i < x_size; i++) {
         for (int j = 0; j < y_size; j++) {
-            patches.emplace_back(std::to_string(i) + "_" + std::to_string(j), std::vector<int>{i, j}, 0);
-//            cout << std::to_string(i) + "_" + std::to_string(j) << endl;
+            std::string patch_id = std::to_string(i) + "_" + std::to_string(j);
+            patches.emplace_back(patch_id, std::vector<int>{i, j});
+
+            // Populate the patchMap for efficient lookup
+            patchMap[patch_id] = &patches.back();
         }
     }
+   // use the reset_N_seedlings() function to reset the number of seedlings in all patches
+    for (auto& p : patches) {
+        p.reset_N_seedlings();
+    }
+    std::cout << "Number of patches: " << patches.size() << std::endl;
+    std::cout << "Number of patches in patchMap: " << patchMap.size() << std::endl;
+
 }
 
-
-
 void MainWindow::perform_dispersal() {
+    std::string patch_coord;
     for (const auto& t : trees) {
         int real_seed_production = t.max_seed_production / 50;
-        std::cout << real_seed_production << std::endl;
-        for (int i = 0; i < real_seed_production; ++i) {
+        for (int i = 1; i <= real_seed_production; i++) {
+            cout << "Debug: Seed " << i << " of tree " << t.id << endl;
             double direction = 2 * M_PI * i / real_seed_production;
             int offset_x = static_cast<int>(t.dispersal_factor * cos(direction));
             int offset_y = static_cast<int>(t.dispersal_factor * sin(direction));
 
-            int new_x = t.x_y_cor[0] + offset_x;    // calculate the new x coordinate where the seedling will be placed
-            int new_y = t.x_y_cor[1] + offset_y;    // and calculate the new y coordinate
+            int new_x = t.x_y_cor[0] + offset_x;
+            int new_y = t.x_y_cor[1] + offset_y;
+            cout << "Debug: New coordinates: " << new_x << ", " << new_y << endl;
+            if (new_x >= 0 && new_x < x_size && new_y >= 0 && new_y < y_size) {
 
-            image.setPixel(new_x, new_y, color_saplings);   // set the pixel to white
-            string patch_coord = to_string(new_x) + "_" + to_string(new_y);     // create a string with the coordinates of the patch
-            cout << patches[10].get_N_seedlings() << endl;
-            for (auto& p : patches) {
-                if (p.patch_id == patch_coord) {        // find the patch with the same coordinates
-                    cout << p.get_N_seedlings() << endl;
-                    cout << "patchid " + p.patch_id << endl;
-                    p.update_N_seedlings(1);            // update the number of seedlings in the patch
-//                    cout << p.get_N_seedlings() << endl;
+                image.setPixel(new_x, new_y, color_saplings);
+
+                patch_coord = "30_42";
+//                patch_coord = std::to_string(new_x) + "_" + std::to_string(new_y);
+                std::cout << "Debug: Coordinates of seedling: " << patch_coord << std::endl;
+                //check if patch_coord is in patchMap
+                if (patchMap.find(patch_coord) == patchMap.end()) {
+                    std::cout << "Debug: Patch " << patch_coord << " not found in patchMap" << std::endl;
+                    std::cout << "Debug: Coordinates of seedling: " << patch_coord << std::endl;
+                } else {
+                    // Efficiently look up the patch by coordinates using the unordered_map
+                    std::cout << "Debug: old number of seedlings in patch " <<
+                        patch_coord << ": " << patchMap[patch_coord]->get_N_seedlings() << std::endl;
+                    patchMap[patch_coord]->update_N_seedlings(1);
+                    std::cout << "Debug: Number of seedlings in patch " <<
+                        patch_coord << ": " << patchMap[patch_coord]->get_N_seedlings() << std::endl;
                 }
             }
         }
     }
     scene->addPixmap(QPixmap::fromImage(image));
 }
+
 
 
 void MainWindow::on_go_button_clicked()
