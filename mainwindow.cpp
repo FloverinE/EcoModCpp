@@ -9,6 +9,7 @@
 #include <QImage>
 #include <string>
 #include <unordered_map>
+#include <tuple>
 
 using namespace std;
 
@@ -20,13 +21,14 @@ MainWindow::MainWindow(QWidget *parent)
 
 }
 // define the size of the map
-const int x_size = 50;
-const int y_size = 50;
+const int x_size = 300;
+const int y_size = 300;
 
 std::random_device rd;
 std::mt19937 gen(rd());
 std::uniform_int_distribution<int> dist_x(0, x_size - 1);
 std::uniform_int_distribution<int> dist_y(0, y_size - 1);
+std::uniform_real_distribution<float> dist_float(0.0f, 1.0f);
 
 QRgb color_birch = qRgb(165,42,42); // brown color
 QRgb color_oak = qRgb(0, 128, 0); // green color
@@ -86,35 +88,36 @@ void MainWindow::setup_trees() {
 }
 
 std::vector<patch> patches;
-std::unordered_map<std::string, patch*> patchMap;  // Map to efficiently look up patches by coordinates
+std::unordered_map<std::string, patch*> patch_map;  // Map to efficiently look up patches by coordinates
 
 
 void MainWindow::setup_patches() {
     patches.clear();
-    patchMap.clear();  // Clear the map before repopulating
+    patch_map.clear();  // Clear the map before repopulating
 
     for (int i = 0; i < x_size; i++) {
         for (int j = 0; j < y_size; j++) {
             std::string patch_id = std::to_string(i) + "_" + std::to_string(j);
-            patches.emplace_back(patch_id, std::vector<int>{i, j});
+            patches.emplace_back(patch_id, std::vector<int>{i, j}, std::vector<int>{0, 0});
 
-            // Populate the patchMap for efficient lookup
-            patchMap[patch_id] = &patches.back();
+            // Populate the patch_map for efficient lookup
+            patch_map[patch_id] = &patches.back();
         }
     }
    // use the reset_N_seedlings() function to reset the number of seedlings in all patches
     for (auto& p : patches) {
-        p.reset_N_seedlings();
+        p.reset_N_seeds();
     }
-    std::cout << "Number of patches: " << patches.size() << std::endl;
-    std::cout << "Number of patches in patchMap: " << patchMap.size() << std::endl;
+    std::cout << patches[1].N_seeds[1] << std::endl;
+//    std::cout << "Number of patches: " << patches.size() << std::endl; // works
+//    std::cout << "Number of patches in patch_map: " << patch_map.size() << std::endl; // works
 
 }
 
 void MainWindow::perform_dispersal() {
     std::string patch_coord;
-    for (const auto& t : trees) {
-        int real_seed_production = t.max_seed_production / 50;
+    for (auto& t : trees) {
+        int real_seed_production = t.max_seed_production / dist_float(gen);
         for (int i = 1; i <= real_seed_production; i++) {
             cout << "Debug: Seed " << i << " of tree " << t.id << endl;
             double direction = 2 * M_PI * i / real_seed_production;
@@ -128,20 +131,24 @@ void MainWindow::perform_dispersal() {
 
                 image.setPixel(new_x, new_y, color_saplings);
 
-                patch_coord = "30_42";
-//                patch_coord = std::to_string(new_x) + "_" + std::to_string(new_y);
-                std::cout << "Debug: Coordinates of seedling: " << patch_coord << std::endl;
-                //check if patch_coord is in patchMap
-                if (patchMap.find(patch_coord) == patchMap.end()) {
-                    std::cout << "Debug: Patch " << patch_coord << " not found in patchMap" << std::endl;
-                    std::cout << "Debug: Coordinates of seedling: " << patch_coord << std::endl;
+                std::string patch_coord = "30_42";
+                patch_coord = std::to_string(new_x) + '_' + std::to_string(new_y);
+                std::cout << "Debug: Coordinates of seed: " << patch_coord << std::endl;
+                //check if patch_coord is in patch_map
+                if (patch_map.find(patch_coord) == patch_map.end()) {
+                    std::cout << "Debug: Patch " << patch_coord << " not found in patch_map" << std::endl;
+                    std::cout << "Debug: Coordinates of seed: " << patch_coord << std::endl;
                 } else {
                     // Efficiently look up the patch by coordinates using the unordered_map
-                    std::cout << "Debug: old number of seedlings in patch " <<
-                        patch_coord << ": " << patchMap[patch_coord]->get_N_seedlings() << std::endl;
-                    patchMap[patch_coord]->update_N_seedlings(1);
-                    std::cout << "Debug: Number of seedlings in patch " <<
-                        patch_coord << ": " << patchMap[patch_coord]->get_N_seedlings() << std::endl;
+//                    patch_map[patch_coord]->update_N_seeds(1, t.species);
+//                    patch_map[patch_coord]->update_N_seeds(1, 'b');
+//                    cout << patches[1].get_N_oak_seeds() << endl;
+                }
+                for (auto& p : patches) {
+                    if (p.x_y_cor[0] == new_x && p.x_y_cor[1] == new_y) {
+                        p.update_N_seeds(100, t.species);
+                        cout << p.get_N_oak_seeds() << endl;
+                    }
                 }
             }
         }
@@ -149,11 +156,38 @@ void MainWindow::perform_dispersal() {
     scene->addPixmap(QPixmap::fromImage(image));
 }
 
+void MainWindow::perform_pop_dynamics() {
+
+    for(int i = 0; i < patches.size(); i++){
+//        patches[i].update_N_seeds(100, 'o');
+//        cout << "N oak seeds " << patches[i].patch_id << " " << patches[i].N_seeds[1] << endl; // Use index 1 for oak seeds
+        for (int j = 0; j < 2; j++) {  // Use a different loop variable 'j'
+            if(patches[i].N_seeds[j] > 0){
+                for (int k = 0; k < patches[i].N_seeds[j]; k++) {
+                    // Mortality
+                    if (dist_float(gen) < patches[i].mortality_rate) {
+                        patches[i].N_seeds[j] -= 1;
+                        // Growth into next height class
+                    } else if (dist_float(gen) < patches[i].growth_rate) {
+                        patches[i].N_height_class_1[j] += 1;
+                        patches[i].N_seeds[j] -= 1;
+                    }
+                }
+                cout << "N oak seeds after mort and growth in patch" <<
+                    patches[i].patch_id << " " << patches[i].N_height_class_1[1] << endl; // Use index 1 for oak seeds
+            }
+        }
+        //        cout << "N oak seeds after mort and growth in patch" <<
+        //            patches[i].patch_id << " " << patches[i].N_height_class_1[1] << endl; // Use index 1 for oak seeds
+    }
+}
+
 
 
 void MainWindow::on_go_button_clicked()
 {
     perform_dispersal();
+    perform_pop_dynamics();
 }
 
 MainWindow::~MainWindow()

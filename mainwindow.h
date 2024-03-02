@@ -23,6 +23,7 @@ private slots:
     void setup_trees();
     void setup_patches();
     void perform_dispersal();
+    void perform_pop_dynamics();
 
 private:
     Ui::MainWindow *ui;
