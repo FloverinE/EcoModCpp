@@ -117,7 +117,7 @@ void MainWindow::setup_patches() {
 void MainWindow::perform_dispersal() {
     std::string patch_coord;
     for (auto& t : trees) {
-        int real_seed_production = t.max_seed_production / dist_float(gen);
+        int real_seed_production = t.max_seed_production * dist_float(gen);
         for (int i = 1; i <= real_seed_production; i++) {
             cout << "Debug: Seed " << i << " of tree " << t.id << endl;
             double direction = 2 * M_PI * i / real_seed_production;
