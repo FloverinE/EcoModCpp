@@ -24,6 +24,7 @@ private slots:
     void setup_patches();
     void perform_dispersal();
     void perform_pop_dynamics();
+    void setup_min_distance_to_tree();
 
 private:
     Ui::MainWindow *ui;

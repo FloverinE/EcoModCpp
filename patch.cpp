@@ -37,6 +37,11 @@ std::vector<int> patch::get_coords() {
     return x_y_cor;
 }
 
+double patch::set_distance_to_tree(int x, int y) {
+    double dist_to_tree = sqrt(pow(x - x_y_cor[0], 2) + pow(y - x_y_cor[1], 2));
+    return dist_to_tree;
+}
+
 
 //void patch::perform_pop_dynamics(){
 //    for (int i = 0; i < 2; i++) {

@@ -1,3 +1,13 @@
+// todo
+// more height classes per species
+
+// population density graphs
+
+// light availability changing with distance to tree
+
+// water availability changing with percent of deadwood remaining
+
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "patch.h"
@@ -21,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 }
 // define the size of the map
-const int x_size = 300;
+const int x_size = 300; //
 const int y_size = 300;
 
 std::random_device rd;
@@ -29,6 +39,7 @@ std::mt19937 gen(rd());
 std::uniform_int_distribution<int> dist_x(0, x_size - 1);
 std::uniform_int_distribution<int> dist_y(0, y_size - 1);
 std::uniform_real_distribution<float> dist_float(0.0f, 1.0f);
+
 
 QRgb color_birch = qRgb(165,42,42); // brown color
 QRgb color_oak = qRgb(0, 128, 0); // green color
@@ -42,17 +53,18 @@ void MainWindow::setup_map() {
     // declare and initialize an image
     ui->main_map->resize(x_size, y_size);
     image = QImage(x_size, y_size, QImage::Format_RGB32);
-    image.fill(Qt::black);
+    image.fill(Qt::white);
     scene->addPixmap(QPixmap::fromImage(image));
 }
 
 
-
+//
 void MainWindow::on_setup_button_clicked()
 {
     setup_map();
     setup_patches();
     setup_trees();
+    setup_min_distance_to_tree();
 }
 
 std::vector<int> tree_ids;
@@ -64,8 +76,8 @@ void MainWindow::setup_trees() {
     int N_trees = ui->N_trees_spinBox->value();
     double species_ratio = ui->species_ratio_spinBox->value();
     int N_birch_trees = N_trees * species_ratio;
-//    int N_oak_trees = N_trees - N_birch_trees; // not used since if_else
-//    tree trees[N_trees];
+    //    int N_oak_trees = N_trees - N_birch_trees; // not used since if_else
+    //    tree trees[N_trees];
     for (int i = 0; i < N_trees; ++i) {
         trees.emplace_back(i, std::vector<int>{}, 'b', 1, 10);
         trees[i].x_y_cor = {dist_x(gen), dist_y(gen)};
@@ -104,15 +116,101 @@ void MainWindow::setup_patches() {
             patch_map[patch_id] = &patches.back();
         }
     }
-   // use the reset_N_seedlings() function to reset the number of seedlings in all patches
+    // use the reset_N_seedlings() function to reset the number of seedlings in all patches
     for (auto& p : patches) {
         p.reset_N_seeds();
     }
     std::cout << patches[1].N_seeds[1] << std::endl;
-//    std::cout << "Number of patches: " << patches.size() << std::endl; // works
-//    std::cout << "Number of patches in patch_map: " << patch_map.size() << std::endl; // works
+    //    std::cout << "Number of patches: " << patches.size() << std::endl; // works
+    //    std::cout << "Number of patches in patch_map: " << patch_map.size() << std::endl; // works
 
+    //    // compute distance to tree
+    //    for (auto& t : trees) {
+    //        for (auto& p : patches) {
+    ////            float distance = sqrt(pow(t.x_y_cor[0] - p.x_y_cor[0], 2) + pow(t.x_y_cor[1] - p.x_y_cor[1], 2));
+    ////            p.distance_to_tree[t.id] = distance;
+    //            std::vector<float> distances = {0};
+    //            // push back distances per patch to tree relation
+    //            distances.push_back(p.set_distance_to_tree(t.x_y_cor[0], t.x_y_cor[1]));
+    //            auto min_distance = std::min_element(distances.begin(), distances.end());
+
+    //            cout << "Debug: Distance to tree " << t.id << " from patch " << p.patch_id << " is " << distances[1] << endl;
+    ////            p.distance_to_tree = p.set_distance_to_tree(t.x_y_cor[0], t.x_y_cor[1]);
+
+    //        }
+    //    }
 }
+
+//// compute distance to tree
+//void MainWindow::setup_distance_to_tree() {
+//    for (auto& t : trees) {
+//        for (auto& p : patches) {
+//            std::vector<float> distances = {0};
+//            float distance = sqrt(pow(t.x_y_cor[0] - p.x_y_cor[0], 2) + pow(t.x_y_cor[1] - p.x_y_cor[1], 2));
+//            p.distance_to_tree[t.id] = distance;
+//        }
+//    }
+//}
+
+
+#include <vector>
+#include <limits>  // for std::numeric_limits
+
+// distance map of min distance to trees for mapping colors
+std::vector<std::vector<double>> distance_map(y_size, std::vector<double>(x_size, 0.0));
+
+void MainWindow::setup_min_distance_to_tree() {
+    if (trees.empty()) {
+        std::cerr << "Error: No trees to compute distance to" << std::endl;
+        return;
+    } else {
+        for (auto& p : patches) {
+            std::vector<float> distances(trees.size(), 0.0f);  // Initialize distances with 0 for each patch
+
+            for (unsigned int i = 0; i < trees.size(); ++i) {
+                double distance = sqrt(pow(trees[i].x_y_cor[0] - p.x_y_cor[0], 2) + pow(trees[i].x_y_cor[1] - p.x_y_cor[1], 2));
+                distances[i] = distance;
+            }
+            auto min_distance_iter = std::min_element(distances.begin(), distances.end());
+            // Store the minimum distance
+            p.distance_to_tree = *min_distance_iter;
+        }
+        cout << "Debug: Min distance to tree from patch 0_0 is " << patches[0].distance_to_tree << endl;
+        //    double distance = patch_map[patch_coord]->distance_to_tree;
+
+        //    double min_distance = 0.0;
+        //    double max_distance = sqrt(pow(x_size, 2) + pow(y_size, 2));
+        //    // Normalize the distance to be between 0 and 1
+        //    double normalized_distance = (14.0 - min_distance) / (max_distance - min_distance);
+        //    cout << normalized_distance << endl;
+
+
+        // color the patches on a gradient based on distance to tree
+        for (unsigned x = 0; x < x_size; x++) {
+            for (unsigned y = 0; y < x_size; y++) {
+                string patch_coord = std::to_string(x) + "_" + std::to_string(y);
+                double distance = patch_map[patch_coord]->distance_to_tree;
+
+                double min_distance = 0.0;
+                //            double max_distance = sqrt(pow(x_size, 2) + pow(y_size, 2));
+                double max_distance = 424;
+
+                // Normalize the distance to be between 0 and 1
+                double normalized_distance = (distance - min_distance) / (max_distance - min_distance);
+                distance_map[x][y] = distance;
+
+            }
+        }
+    }
+//    cout << dist_float(gen) * 255 << endl;
+    scene->addPixmap(QPixmap::fromImage(image));
+}
+
+
+void::update_map(){
+    for(int i
+}
+
 
 void MainWindow::perform_dispersal() {
     std::string patch_coord;
@@ -140,9 +238,9 @@ void MainWindow::perform_dispersal() {
                     std::cout << "Debug: Coordinates of seed: " << patch_coord << std::endl;
                 } else {
                     // Efficiently look up the patch by coordinates using the unordered_map
-//                    patch_map[patch_coord]->update_N_seeds(1, t.species);
-//                    patch_map[patch_coord]->update_N_seeds(1, 'b');
-//                    cout << patches[1].get_N_oak_seeds() << endl;
+                    //                    patch_map[patch_coord]->update_N_seeds(1, t.species);
+                    //                    patch_map[patch_coord]->update_N_seeds(1, 'b');
+                    //                    cout << patches[1].get_N_oak_seeds() << endl;
                 }
                 for (auto& p : patches) {
                     if (p.x_y_cor[0] == new_x && p.x_y_cor[1] == new_y) {
@@ -157,11 +255,10 @@ void MainWindow::perform_dispersal() {
 }
 
 void MainWindow::perform_pop_dynamics() {
-
-    for(int i = 0; i < patches.size(); i++){
-//        patches[i].update_N_seeds(100, 'o');
-//        cout << "N oak seeds " << patches[i].patch_id << " " << patches[i].N_seeds[1] << endl; // Use index 1 for oak seeds
-        for (int j = 0; j < 2; j++) {  // Use a different loop variable 'j'
+    for(unsigned int i = 0; i < patches.size(); i++){
+        //        patches[i].update_N_seeds(100, 'o');
+        //        cout << "N oak seeds " << patches[i].patch_id << " " << patches[i].N_seeds[1] << endl; // Use index 1 for oak seeds
+        for (int j = 0; j < 2; j++) {
             if(patches[i].N_seeds[j] > 0){
                 for (int k = 0; k < patches[i].N_seeds[j]; k++) {
                     // Mortality
