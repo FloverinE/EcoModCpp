@@ -23,23 +23,34 @@
 
 using namespace std;
 
+// constructor
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    N_seeds_chart = new QChart();
+    ui->N_seeds_chart->setChart(N_seeds_chart);
+    ui->N_seeds_chart->setRenderHint(QPainter::Antialiasing); // looks prettier
 
 }
+
+// destructor
+MainWindow::~MainWindow()
+{
+    delete ui;
+    delete N_seeds_chart;
+}
+
 // define the size of the map
 const int x_size = 300; //
 const int y_size = 300;
 
-std::random_device rd;
-std::mt19937 gen(rd());
-std::uniform_int_distribution<int> dist_x(0, x_size - 1);
+std::random_device rd;  // used to obtain a seed for the random number engine
+std::mt19937 gen(rd()); // standard mersenne_twister_engine seeded with rd()
+std::uniform_int_distribution<int> dist_x(0, x_size - 1);   //
 std::uniform_int_distribution<int> dist_y(0, y_size - 1);
 std::uniform_real_distribution<float> dist_float(0.0f, 1.0f);
-
 
 QRgb color_birch = qRgb(165,42,42); // brown color
 QRgb color_oak = qRgb(0, 128, 0); // green color
@@ -65,6 +76,7 @@ void MainWindow::on_setup_button_clicked()
     setup_patches();
     setup_trees();
     setup_min_distance_to_tree();
+    update_map();
 }
 
 std::vector<int> tree_ids;
@@ -174,6 +186,8 @@ void MainWindow::setup_min_distance_to_tree() {
             auto min_distance_iter = std::min_element(distances.begin(), distances.end());
             // Store the minimum distance
             p.distance_to_tree = *min_distance_iter;
+            const QColor color(0, 255 * p.distance_to_tree / 425.0, 0); // (distance / 1000.0)
+            image.setPixelColor(p.x_y_cor[0], p.x_y_cor[1], color);
         }
         cout << "Debug: Min distance to tree from patch 0_0 is " << patches[0].distance_to_tree << endl;
         //    double distance = patch_map[patch_coord]->distance_to_tree;
@@ -185,30 +199,38 @@ void MainWindow::setup_min_distance_to_tree() {
         //    cout << normalized_distance << endl;
 
 
-        // color the patches on a gradient based on distance to tree
-        for (unsigned x = 0; x < x_size; x++) {
-            for (unsigned y = 0; y < x_size; y++) {
-                string patch_coord = std::to_string(x) + "_" + std::to_string(y);
-                double distance = patch_map[patch_coord]->distance_to_tree;
+//        // color the patches on a gradient based on distance to tree
+//        for (unsigned x = 0; x < x_size; x++) {
+//            for (unsigned y = 0; y < x_size; y++) {
+//                string patch_coord = std::to_string(x) + "_" + std::to_string(y);
+//                double distance = patch_map[patch_coord]->distance_to_tree;
 
-                double min_distance = 0.0;
-                //            double max_distance = sqrt(pow(x_size, 2) + pow(y_size, 2));
-                double max_distance = 424;
+////                double min_distance = 0.0;
+////                //            double max_distance = sqrt(pow(x_size, 2) + pow(y_size, 2));
+////                double max_distance = 1000.0;
 
-                // Normalize the distance to be between 0 and 1
-                double normalized_distance = (distance - min_distance) / (max_distance - min_distance);
-                distance_map[x][y] = distance;
-
-            }
-        }
+////                // Normalize the distance to be between 0 and 1
+////                double normalized_distance = (distance - min_distance) / (max_distance - min_distance);
+//                cout << distance << endl;
+//                distance_map[x][y] = distance;
+//                const QColor color(0, 255 * dist_float(gen), 0); // (distance / 1000.0)
+//                image.setPixelColor(x, y, color);
+//            }
+//        }
     }
 //    cout << dist_float(gen) * 255 << endl;
     scene->addPixmap(QPixmap::fromImage(image));
 }
 
 
-void::update_map(){
-    for(int i
+void MainWindow::update_map(){
+    for(int x = 0; x < x_size; x++){
+        for(int y = 0; y < y_size; y++){
+            const QColor color(0, 128 * dist_float(gen), 0);
+            image.setPixelColor(x, y, color);
+        }
+    }
+//    scene->addPixmap(QPixmap::fromImage(image));
 }
 
 
@@ -285,10 +307,5 @@ void MainWindow::on_go_button_clicked()
 {
     perform_dispersal();
     perform_pop_dynamics();
-}
-
-MainWindow::~MainWindow()
-{
-    delete ui;
 }
 

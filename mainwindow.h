@@ -25,11 +25,14 @@ private slots:
     void perform_dispersal();
     void perform_pop_dynamics();
     void setup_min_distance_to_tree();
+    void update_map();
 
 private:
     Ui::MainWindow *ui;
     QGraphicsScene *scene;
     QImage image;  // Declare image as a member variable
+    // needed for plotting
+    QChart *N_seeds_chart;
 
 
 };
