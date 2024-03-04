@@ -25,7 +25,7 @@ private slots:
     void perform_dispersal();
     void perform_pop_dynamics();
     void setup_min_distance_to_tree();
-    void count_seeds();
+    void count_populations();
 
     void update_map();
     void clear_charts();
@@ -37,6 +37,7 @@ private:
     QImage image;  // Declare image as a member variable
     // needed for plotting
     QChart *N_seeds_chart;
+    QChart *N_height_class_chart;
 
 
 };

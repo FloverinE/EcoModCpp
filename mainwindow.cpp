@@ -1,12 +1,19 @@
 // todo
 // more height classes per species
 
-// population density graphs
+
+/*
+ population density graphs
+ + first graph for N_seeds
+ - all height classes
+*/
+
 
 // light availability changing with distance to tree
+// - not yet
 
 // water availability changing with percent of deadwood remaining
-
+// - not yet
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -64,7 +71,7 @@ void MainWindow::on_setup_button_clicked()
     setup_trees();
     setup_min_distance_to_tree();
     update_map();
-    count_seeds();
+    count_populations();
     clear_charts();
 }
 
@@ -74,7 +81,7 @@ void MainWindow::on_go_button_clicked()
     perform_dispersal();
     for(int i = 0; i < 10; i++){
             perform_pop_dynamics();
-            count_seeds();
+            count_populations();
     }
     draw_charts();
 }
@@ -117,12 +124,12 @@ void MainWindow::setup_trees() {
         }
         trees[i].id = i;
         tree_ids.push_back(i);
-
     }
 
     for (const auto& t : trees) {
         std::cout << "Tree ID: " << t.id << ", Species: " << t.species << std::endl;
     }
+
     scene->addPixmap(QPixmap::fromImage(image));
 }
 
@@ -320,31 +327,28 @@ void MainWindow::perform_pop_dynamics() {
     }
 }
 
-// Define a vector to store the counts at each time step
-std::vector<std::vector<int>> N_seeds_total;
+// Vectors to store the population counts as sum of all patches at each time step
+std::vector<std::vector<int>> N_seeds_total;    // Seeds
+std::vector<std::vector<int>> N_hc1_total;      // Height class 1
 
-void MainWindow::count_seeds() {
+void MainWindow::count_populations() {
     // Create a vector to store the counts for the current time step
-    std::vector<int> current_counts = {0, 0};
+    std::vector<int> seed_counts = {0, 0};
+    std::vector<int> hc1_counts  = {0, 0};
 
     // Iterate through patches and update counts
     for (const auto& p : patches) {
-        current_counts[0] += p.N_seeds[0];
-        current_counts[1] += p.N_seeds[1];
+        seed_counts[0] += p.N_seeds[0];
+        seed_counts[1] += p.N_seeds[1];
+
+        hc1_counts[0] += p.N_height_class_1[0];
+        hc1_counts[1] += p.N_height_class_1[1];
     }
     // Push back the counts for the current time step
-    N_seeds_total.push_back(current_counts);
+    N_seeds_total.push_back(seed_counts);
+    N_hc1_total.push_back(hc1_counts);
 }
 
-
-//void MainWindow::count_seeds(){
-//    for (auto& p : patches) {
-//        N_birch_seeds_total += p.N_seeds[0];
-//        N_oak_seeds_total += p.N_seeds[1];
-//    }
-//    cout << "Total number of birch seeds: " << N_birch_seeds_total << endl;
-//    cout << "Total number of oak seeds: " << N_oak_seeds_total << endl;
-//}
 
 void MainWindow::clear_charts()
 {
@@ -377,6 +381,29 @@ void MainWindow::draw_charts(){
     N_seeds_chart->createDefaultAxes();
     N_seeds_chart->axisX()->setTitleText("Time [steps]");
     N_seeds_chart->axisY()->setTitleText("N seeds [ha]");
+
+    // draw height class 1 chart
+    QLineSeries *N_birch_hc1_series = new QLineSeries();
+    N_birch_hc1_series->setColor(Qt::black); // default color: blue
+    N_birch_hc1_series->setName("Number of birch saplings height class 1 per hectare");
+
+    QLineSeries *N_oak_hc1_series = new QLineSeries();
+    N_oak_hc1_series->setColor(Qt::black); // default color: blue
+    N_oak_hc1_series->setName("Number of oak saplings height class 1 per hectare");
+
+    for (int time = 0; time < 10; time++) {
+        N_birch_hc1_series->append(time, N_hc1_total[time][0]);
+        cout << "N hc1 total: " << N_hc1_total[time][0] << endl;
+        N_oak_hc1_series->append(time, N_hc1_total[time][1]);
+        cout << "N hc1 total: " << N_hc1_total[time][1] << endl;
+    }
+
+    N_height_class_chart->addSeries(N_birch_hc1_series);
+    N_height_class_chart->addSeries(N_oak_hc1_series);
+
+    N_height_class_chart->createDefaultAxes();
+    N_height_class_chart->axisX()->setTitleText("Time [steps]");
+    N_height_class_chart->axisY()->setTitleText("N saplings height class 1 [ha]");
 }
 
 

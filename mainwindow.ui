@@ -83,9 +83,19 @@
     <property name="geometry">
      <rect>
       <x>770</x>
-      <y>350</y>
+      <y>380</y>
       <width>591</width>
-      <height>471</height>
+      <height>311</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QGraphicsView" name="graphicsView">
+    <property name="geometry">
+     <rect>
+      <x>770</x>
+      <y>60</y>
+      <width>591</width>
+      <height>301</height>
      </rect>
     </property>
    </widget>
