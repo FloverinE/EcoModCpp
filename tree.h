@@ -2,7 +2,7 @@
 #define TREE_H
 
 #include <vector>        // package to use vectors
-
+#include <QImage>
 
 class tree
 {
@@ -20,6 +20,7 @@ public:
     int max_seed_production;
     int dispersal_factor;
     update_species_params();
+    QRgb color;
 
 
 private:

@@ -52,9 +52,32 @@ std::uniform_int_distribution<int> dist_x(0, x_size - 1);   //
 std::uniform_int_distribution<int> dist_y(0, y_size - 1);
 std::uniform_real_distribution<float> dist_float(0.0f, 1.0f);
 
-QRgb color_birch = qRgb(165,42,42); // brown color
-QRgb color_oak = qRgb(0, 128, 0); // green color
-QRgb color_saplings = qRgb(255, 255, 255); // white color
+
+QRgb color_seeds = qRgb(255, 255, 255); // white color
+
+
+//
+void MainWindow::on_setup_button_clicked()
+{
+    setup_map();
+    setup_patches();
+    setup_trees();
+    setup_min_distance_to_tree();
+    update_map();
+    count_seeds();
+    clear_charts();
+}
+
+
+void MainWindow::on_go_button_clicked()
+{
+    perform_dispersal();
+    for(int i = 0; i < 10; i++){
+            perform_pop_dynamics();
+            count_seeds();
+    }
+    draw_charts();
+}
 
 void MainWindow::setup_map() {
     scene = new QGraphicsScene;
@@ -68,16 +91,6 @@ void MainWindow::setup_map() {
     scene->addPixmap(QPixmap::fromImage(image));
 }
 
-
-//
-void MainWindow::on_setup_button_clicked()
-{
-    setup_map();
-    setup_patches();
-    setup_trees();
-    setup_min_distance_to_tree();
-    update_map();
-}
 
 std::vector<int> tree_ids;
 
@@ -95,14 +108,16 @@ void MainWindow::setup_trees() {
         trees[i].x_y_cor = {dist_x(gen), dist_y(gen)};
         if (i <= N_birch_trees){
             trees[i].species = 'b';
-            image.setPixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1], color_birch);
+            trees[i].update_species_params();
+            image.setPixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1], trees[i].color);
         } else {
             trees[i].species = 'o';
-            image.setPixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1], color_oak);
+            trees[i].update_species_params();
+            image.setPixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1], trees[i].color);
         }
         trees[i].id = i;
         tree_ids.push_back(i);
-        trees[i].update_species_params();
+
     }
 
     for (const auto& t : trees) {
@@ -199,38 +214,42 @@ void MainWindow::setup_min_distance_to_tree() {
         //    cout << normalized_distance << endl;
 
 
-//        // color the patches on a gradient based on distance to tree
-//        for (unsigned x = 0; x < x_size; x++) {
-//            for (unsigned y = 0; y < x_size; y++) {
-//                string patch_coord = std::to_string(x) + "_" + std::to_string(y);
-//                double distance = patch_map[patch_coord]->distance_to_tree;
+        //        // color the patches on a gradient based on distance to tree
+        //        for (unsigned x = 0; x < x_size; x++) {
+        //            for (unsigned y = 0; y < x_size; y++) {
+        //                string patch_coord = std::to_string(x) + "_" + std::to_string(y);
+        //                double distance = patch_map[patch_coord]->distance_to_tree;
 
-////                double min_distance = 0.0;
-////                //            double max_distance = sqrt(pow(x_size, 2) + pow(y_size, 2));
-////                double max_distance = 1000.0;
+        ////                double min_distance = 0.0;
+        ////                //            double max_distance = sqrt(pow(x_size, 2) + pow(y_size, 2));
+        ////                double max_distance = 1000.0;
 
-////                // Normalize the distance to be between 0 and 1
-////                double normalized_distance = (distance - min_distance) / (max_distance - min_distance);
-//                cout << distance << endl;
-//                distance_map[x][y] = distance;
-//                const QColor color(0, 255 * dist_float(gen), 0); // (distance / 1000.0)
-//                image.setPixelColor(x, y, color);
-//            }
-//        }
+        ////                // Normalize the distance to be between 0 and 1
+        ////                double normalized_distance = (distance - min_distance) / (max_distance - min_distance);
+        //                cout << distance << endl;
+        //                distance_map[x][y] = distance;
+        //                const QColor color(0, 255 * dist_float(gen), 0); // (distance / 1000.0)
+        //                image.setPixelColor(x, y, color);
+        //            }
+        //        }
     }
-//    cout << dist_float(gen) * 255 << endl;
+    //    cout << dist_float(gen) * 255 << endl;
     scene->addPixmap(QPixmap::fromImage(image));
 }
 
 
-void MainWindow::update_map(){
+void MainWindow::update_map(){ // not used as of now
     for(int x = 0; x < x_size; x++){
         for(int y = 0; y < y_size; y++){
             const QColor color(0, 128 * dist_float(gen), 0);
-            image.setPixelColor(x, y, color);
+            //            image.setPixelColor(x, y, color);
         }
     }
-//    scene->addPixmap(QPixmap::fromImage(image));
+
+    for (const auto& t : trees) {
+        image.setPixel(t.x_y_cor[0], t.x_y_cor[1], t.color);
+    }
+    //    scene->addPixmap(QPixmap::fromImage(image));
 }
 
 
@@ -249,7 +268,7 @@ void MainWindow::perform_dispersal() {
             cout << "Debug: New coordinates: " << new_x << ", " << new_y << endl;
             if (new_x >= 0 && new_x < x_size && new_y >= 0 && new_y < y_size) {
 
-                image.setPixel(new_x, new_y, color_saplings);
+                image.setPixel(new_x, new_y, color_seeds);
 
                 std::string patch_coord = "30_42";
                 patch_coord = std::to_string(new_x) + '_' + std::to_string(new_y);
@@ -301,11 +320,63 @@ void MainWindow::perform_pop_dynamics() {
     }
 }
 
+// Define a vector to store the counts at each time step
+std::vector<std::vector<int>> N_seeds_total;
 
+void MainWindow::count_seeds() {
+    // Create a vector to store the counts for the current time step
+    std::vector<int> current_counts = {0, 0};
 
-void MainWindow::on_go_button_clicked()
-{
-    perform_dispersal();
-    perform_pop_dynamics();
+    // Iterate through patches and update counts
+    for (const auto& p : patches) {
+        current_counts[0] += p.N_seeds[0];
+        current_counts[1] += p.N_seeds[1];
+    }
+    // Push back the counts for the current time step
+    N_seeds_total.push_back(current_counts);
 }
+
+
+//void MainWindow::count_seeds(){
+//    for (auto& p : patches) {
+//        N_birch_seeds_total += p.N_seeds[0];
+//        N_oak_seeds_total += p.N_seeds[1];
+//    }
+//    cout << "Total number of birch seeds: " << N_birch_seeds_total << endl;
+//    cout << "Total number of oak seeds: " << N_oak_seeds_total << endl;
+//}
+
+void MainWindow::clear_charts()
+{
+    //clear all output vectors
+    //    N_seeds_vector.clear();
+
+    // clear N_seeds chart
+    N_seeds_chart->removeAllSeries(); // also calls delete
+}
+
+void MainWindow::draw_charts(){
+    // draw N_seeds chart
+    QLineSeries *N_birch_seeds_series = new QLineSeries();
+    N_birch_seeds_series->setColor(Qt::black); // default color: blue
+    N_birch_seeds_series->setName("Number of birch seeds per hectare");
+
+    QLineSeries *N_oak_seeds_series = new QLineSeries();
+    N_oak_seeds_series->setColor(Qt::black); // default color: blue
+    N_oak_seeds_series->setName("Number of oak seeds per hectare");
+
+    for (int time = 0; time < 10; time++) {
+        N_birch_seeds_series->append(time, N_seeds_total[time][0]);
+        cout << "N seeds total: " << N_seeds_total[time][0] << endl;
+        N_oak_seeds_series->append(time, N_seeds_total[time][1]);
+        cout << "N seeds total: " << N_seeds_total[time][1] << endl;
+    }
+    N_seeds_chart->addSeries(N_birch_seeds_series);
+    N_seeds_chart->addSeries(N_oak_seeds_series);
+
+    N_seeds_chart->createDefaultAxes();
+    N_seeds_chart->axisX()->setTitleText("Time [steps]");
+    N_seeds_chart->axisY()->setTitleText("N seeds [ha]");
+}
+
 

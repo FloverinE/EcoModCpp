@@ -25,7 +25,11 @@ private slots:
     void perform_dispersal();
     void perform_pop_dynamics();
     void setup_min_distance_to_tree();
+    void count_seeds();
+
     void update_map();
+    void clear_charts();
+    void draw_charts();
 
 private:
     Ui::MainWindow *ui;

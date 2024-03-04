@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1532</width>
+    <height>923</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -82,10 +82,10 @@
    <widget class="QChartView" name="N_seeds_chart">
     <property name="geometry">
      <rect>
-      <x>150</x>
-      <y>270</y>
-      <width>511</width>
-      <height>111</height>
+      <x>770</x>
+      <y>350</y>
+      <width>591</width>
+      <height>471</height>
      </rect>
     </property>
    </widget>
@@ -95,7 +95,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1532</width>
      <height>21</height>
     </rect>
    </property>
