@@ -39,7 +39,9 @@ MainWindow::MainWindow(QWidget *parent)
     N_seeds_chart = new QChart();
     ui->N_seeds_chart->setChart(N_seeds_chart);
     ui->N_seeds_chart->setRenderHint(QPainter::Antialiasing); // looks prettier
-
+    N_height_class_chart = new QChart();
+    ui->N_height_class_chart->setChart(N_height_class_chart);
+    ui->N_height_class_chart->setRenderHint(QPainter::Antialiasing); // looks prettier
 }
 
 // destructor
@@ -47,6 +49,7 @@ MainWindow::~MainWindow()
 {
     delete ui;
     delete N_seeds_chart;
+    delete N_height_class_chart;
 }
 
 // define the size of the map
@@ -357,6 +360,7 @@ void MainWindow::clear_charts()
 
     // clear N_seeds chart
     N_seeds_chart->removeAllSeries(); // also calls delete
+    N_height_class_chart->removeAllSeries(); // also calls delete
 }
 
 void MainWindow::draw_charts(){
