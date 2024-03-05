@@ -42,6 +42,14 @@ MainWindow::MainWindow(QWidget *parent)
     N_height_class_chart = new QChart();
     ui->N_height_class_chart->setChart(N_height_class_chart);
     ui->N_height_class_chart->setRenderHint(QPainter::Antialiasing); // looks prettier
+
+    N_birch_pop_chart = new QChart();
+    ui->N_birch_pop_chart->setChart(N_birch_pop_chart);
+    ui->N_birch_pop_chart->setRenderHint(QPainter::Antialiasing); // looks prettier
+    N_oak_pop_chart = new QChart();
+    ui->N_oak_pop_chart->setChart(N_oak_pop_chart);
+    ui->N_oak_pop_chart->setRenderHint(QPainter::Antialiasing); // looks prettier
+
 }
 
 // destructor
@@ -50,6 +58,9 @@ MainWindow::~MainWindow()
     delete ui;
     delete N_seeds_chart;
     delete N_height_class_chart;
+    delete N_birch_pop_chart;
+    delete N_oak_pop_chart;
+
 }
 
 // define the size of the map
@@ -305,36 +316,116 @@ void MainWindow::perform_dispersal() {
     scene->addPixmap(QPixmap::fromImage(image));
 }
 
+//void MainWindow::perform_pop_dynamics() {
+//    for(unsigned int i = 0; i < patches.size(); i++){
+//        //        patches[i].update_N_seeds(100, 'o');
+//        //        cout << "N oak seeds " << patches[i].patch_id << " " << patches[i].N_seeds[1] << endl; // Use index 1 for oak seeds
+//        for (int j = 0; j < 2; j++) {
+//            if(patches[i].N_seeds[j] > 0){
+//                for (int k = 0; k < patches[i].N_seeds[j]; k++) {
+//                    // Mortality
+//                    if (dist_float(gen) < patches[i].mortality_rate) {
+//                        patches[i].N_seeds[j] -= 1;
+//                        patches[i].N_height_class_1[j] -= 1;
+//                        patches[i].N_height_class_2[j] -= 1;
+//                        patches[i].N_height_class_3[j] -= 1;
+//                        patches[i].N_height_class_4[j] -= 1;
+
+//                        // Growth into next height class
+//                    } else if (dist_float(gen) < patches[i].growth_rate) {
+//                        patches[i].N_height_class_1[j] += 1;
+//                        patches[i].N_seeds[j] -= 1;
+//                    }
+//                }
+//                cout << "N oak seeds after mort and growth in patch" <<
+//                    patches[i].patch_id << " " << patches[i].N_height_class_1[1] << endl; // Use index 1 for oak seeds
+//            }
+//        }
+//        //        cout << "N oak seeds after mort and growth in patch" <<
+//        //            patches[i].patch_id << " " << patches[i].N_height_class_1[1] << endl; // Use index 1 for oak seeds
+//    }
+//}
+
 void MainWindow::perform_pop_dynamics() {
     for(unsigned int i = 0; i < patches.size(); i++){
-        //        patches[i].update_N_seeds(100, 'o');
-        //        cout << "N oak seeds " << patches[i].patch_id << " " << patches[i].N_seeds[1] << endl; // Use index 1 for oak seeds
         for (int j = 0; j < 2; j++) {
+            if(patches[i].N_height_class_3[j] > 0){
+                for(int k = 0; k < patches[i].N_height_class_3[j]; k++){
+                    if(dist_float(gen) < patches[i].mortality_rate){
+                        patches[i].N_height_class_3[j] -= 1;
+                    }
+                    if(dist_float(gen) < patches[i].growth_rate){
+                        patches[i].N_height_class_4[j] += 1;
+                        patches[i].N_height_class_3[j] -= 1;
+                    }
+                }
+            }
+            if(patches[i].N_height_class_2[j] > 0){
+                for(int k = 0; k < patches[i].N_height_class_2[j]; k++){
+                    if(dist_float(gen) < patches[i].mortality_rate){
+                        patches[i].N_height_class_2[j] -= 1;
+                    }
+                    if(dist_float(gen) < patches[i].growth_rate){
+                        patches[i].N_height_class_3[j] += 1;
+                        patches[i].N_height_class_2[j] -= 1;
+                    }
+                }
+            }
+            if(patches[i].N_height_class_1[j] > 0){
+                for(int k = 0; k < patches[i].N_height_class_1[j]; k++){
+                    if(dist_float(gen) < patches[i].mortality_rate){
+                        patches[i].N_height_class_1[j] -= 1;
+                    }
+                    if(dist_float(gen) < patches[i].growth_rate){
+                        patches[i].N_height_class_2[j] += 1;
+                        patches[i].N_height_class_1[j] -= 1;
+                    }
+                }
+            }
             if(patches[i].N_seeds[j] > 0){
                 for (int k = 0; k < patches[i].N_seeds[j]; k++) {
-                    // Mortality
                     if (dist_float(gen) < patches[i].mortality_rate) {
                         patches[i].N_seeds[j] -= 1;
-                        // Growth into next height class
-                    } else if (dist_float(gen) < patches[i].growth_rate) {
+                    }
+                    if (dist_float(gen) < patches[i].growth_rate) {
                         patches[i].N_height_class_1[j] += 1;
                         patches[i].N_seeds[j] -= 1;
                     }
                 }
-                cout << "N oak seeds after mort and growth in patch" <<
-                    patches[i].patch_id << " " << patches[i].N_height_class_1[1] << endl; // Use index 1 for oak seeds
             }
+
         }
-        //        cout << "N oak seeds after mort and growth in patch" <<
-        //            patches[i].patch_id << " " << patches[i].N_height_class_1[1] << endl; // Use index 1 for oak seeds
     }
 }
+
 
 // Vectors to store the population counts as sum of all patches at each time step
 std::vector<std::vector<int>> N_seeds_total;    // Seeds
 std::vector<std::vector<int>> N_hc1_total;      // Height class 1
 
+std::vector<std::vector<int>> birch_pop_total; // Birch population
+std::vector<std::vector<int>> oak_pop_total;   // Oak population
+
 void MainWindow::count_populations() {
+    std::vector<int> birch_pop = {0, 0, 0, 0, 0};
+    std::vector<int> oak_pop = {0, 0, 0, 0, 0};
+
+    for (const auto& p : patches) {
+        birch_pop[0] += p.N_seeds[0];
+        birch_pop[1] += p.N_height_class_1[0];
+        birch_pop[2] += p.N_height_class_2[0];
+        birch_pop[3] += p.N_height_class_3[0];
+        birch_pop[4] += p.N_height_class_4[0];
+
+        oak_pop[0] += p.N_seeds[1];
+        oak_pop[1] += p.N_height_class_1[1];
+        oak_pop[2] += p.N_height_class_2[1];
+        oak_pop[3] += p.N_height_class_3[1];
+        oak_pop[4] += p.N_height_class_4[1];
+    }
+    birch_pop_total.push_back(birch_pop);
+    oak_pop_total.push_back(oak_pop);
+
     // Create a vector to store the counts for the current time step
     std::vector<int> seed_counts = {0, 0};
     std::vector<int> hc1_counts  = {0, 0};
@@ -358,56 +449,96 @@ void MainWindow::clear_charts()
     //clear all output vectors
     //    N_seeds_vector.clear();
 
-    // clear N_seeds chart
-    N_seeds_chart->removeAllSeries(); // also calls delete
-    N_height_class_chart->removeAllSeries(); // also calls delete
+    // clear charts for setup
+    N_seeds_chart->removeAllSeries();
+    N_height_class_chart->removeAllSeries();
+    N_birch_pop_chart->removeAllSeries();
+    N_oak_pop_chart->removeAllSeries();
+
 }
 
 void MainWindow::draw_charts(){
-    // draw N_seeds chart
     QLineSeries *N_birch_seeds_series = new QLineSeries();
     N_birch_seeds_series->setColor(Qt::black); // default color: blue
-    N_birch_seeds_series->setName("Number of birch seeds per hectare");
+    N_birch_seeds_series->setName("Birch seed density per hectare");
+    QLineSeries *N_birch_hc1_series = new QLineSeries();
+    N_birch_hc1_series->setColor(Qt::black); // default color: blue
+    N_birch_hc1_series->setName("Birch height class 1 density per hectare");
+    QLineSeries *N_birch_hc2_series = new QLineSeries();
+    N_birch_hc2_series->setColor(Qt::black); // default color: blue
+    N_birch_hc2_series->setName("Birch height class 2 density per hectare");
+    QLineSeries *N_birch_hc3_series = new QLineSeries();
+    N_birch_hc3_series->setColor(Qt::black); // default color: blue
+    N_birch_hc3_series->setName("Birch height class 3 density per hectare");
+    QLineSeries *N_birch_hc4_series = new QLineSeries();
+    N_birch_hc4_series->setColor(Qt::black); // default color: blue
+    N_birch_hc4_series->setName("Birch height class 4 density per hectare");
 
     QLineSeries *N_oak_seeds_series = new QLineSeries();
     N_oak_seeds_series->setColor(Qt::black); // default color: blue
-    N_oak_seeds_series->setName("Number of oak seeds per hectare");
-
-    for (int time = 0; time < 10; time++) {
-        N_birch_seeds_series->append(time, N_seeds_total[time][0]);
-        cout << "N seeds total: " << N_seeds_total[time][0] << endl;
-        N_oak_seeds_series->append(time, N_seeds_total[time][1]);
-        cout << "N seeds total: " << N_seeds_total[time][1] << endl;
-    }
-    N_seeds_chart->addSeries(N_birch_seeds_series);
-    N_seeds_chart->addSeries(N_oak_seeds_series);
-
-    N_seeds_chart->createDefaultAxes();
-    N_seeds_chart->axisX()->setTitleText("Time [steps]");
-    N_seeds_chart->axisY()->setTitleText("N seeds [ha]");
-
-    // draw height class 1 chart
-    QLineSeries *N_birch_hc1_series = new QLineSeries();
-    N_birch_hc1_series->setColor(Qt::black); // default color: blue
-    N_birch_hc1_series->setName("Number of birch saplings height class 1 per hectare");
-
+    N_oak_seeds_series->setName("Oak seed density per hectare");
     QLineSeries *N_oak_hc1_series = new QLineSeries();
     N_oak_hc1_series->setColor(Qt::black); // default color: blue
-    N_oak_hc1_series->setName("Number of oak saplings height class 1 per hectare");
+    N_oak_hc1_series->setName("Oak height class 1 density per hectare");
+    QLineSeries *N_oak_hc2_series = new QLineSeries();
+    N_oak_hc2_series->setColor(Qt::black); // default color: blue
+    N_oak_hc2_series->setName("Oak height class 2 density per hectare");
+    QLineSeries *N_oak_hc3_series = new QLineSeries();
+    N_oak_hc3_series->setColor(Qt::black); // default color: blue
+    N_oak_hc3_series->setName("Oak height class 3 density per hectare");
+    QLineSeries *N_oak_hc4_series = new QLineSeries();
+    N_oak_hc4_series->setColor(Qt::black); // default color: blue
+    N_oak_hc4_series->setName("Oak height class 4 density per hectare");
+
 
     for (int time = 0; time < 10; time++) {
-        N_birch_hc1_series->append(time, N_hc1_total[time][0]);
-        cout << "N hc1 total: " << N_hc1_total[time][0] << endl;
-        N_oak_hc1_series->append(time, N_hc1_total[time][1]);
-        cout << "N hc1 total: " << N_hc1_total[time][1] << endl;
+        N_birch_seeds_series->append(time, birch_pop_total[time][0]);
+        N_birch_hc1_series->append(time, birch_pop_total[time][1]);
+        N_birch_hc2_series->append(time, birch_pop_total[time][2]);
+        N_birch_hc3_series->append(time, birch_pop_total[time][3]);
+        N_birch_hc4_series->append(time, birch_pop_total[time][4]);
+
+        N_oak_seeds_series->append(time, oak_pop_total[time][0]);
+        N_oak_hc1_series->append(time, oak_pop_total[time][1]);
+        N_oak_hc2_series->append(time, oak_pop_total[time][2]);
+        N_oak_hc3_series->append(time, oak_pop_total[time][3]);
+        N_oak_hc4_series->append(time, oak_pop_total[time][4]);
     }
 
-    N_height_class_chart->addSeries(N_birch_hc1_series);
-    N_height_class_chart->addSeries(N_oak_hc1_series);
 
-    N_height_class_chart->createDefaultAxes();
-    N_height_class_chart->axisX()->setTitleText("Time [steps]");
-    N_height_class_chart->axisY()->setTitleText("N saplings height class 1 [ha]");
+    for (int time = 0; time < 10; time++) {
+        N_birch_seeds_series->append(time, birch_pop_total[time][0]);
+        N_birch_hc1_series->append(time, birch_pop_total[time][1]);
+        N_birch_hc2_series->append(time, birch_pop_total[time][2]);
+        N_birch_hc3_series->append(time, birch_pop_total[time][3]);
+        N_birch_hc4_series->append(time, birch_pop_total[time][4]);
+
+        N_oak_seeds_series->append(time, oak_pop_total[time][0]);
+        N_oak_hc1_series->append(time, oak_pop_total[time][1]);
+        N_oak_hc2_series->append(time, oak_pop_total[time][2]);
+        N_oak_hc3_series->append(time, oak_pop_total[time][3]);
+        N_oak_hc4_series->append(time, oak_pop_total[time][4]);
+
+    }
+    N_birch_pop_chart->addSeries(N_birch_seeds_series);
+    N_birch_pop_chart->addSeries(N_birch_hc1_series);
+    N_birch_pop_chart->addSeries(N_birch_hc2_series);
+    N_birch_pop_chart->addSeries(N_birch_hc3_series);
+    N_birch_pop_chart->addSeries(N_birch_hc4_series);
+
+    N_birch_pop_chart->createDefaultAxes();
+    N_birch_pop_chart->axisX()->setTitleText("Time [steps]");
+    N_birch_pop_chart->axisY()->setTitleText("N birch seed and sapling population [ha]");
+
+    N_oak_pop_chart->addSeries(N_oak_seeds_series);
+    N_oak_pop_chart->addSeries(N_oak_hc1_series);
+    N_oak_pop_chart->addSeries(N_oak_hc2_series);
+    N_oak_pop_chart->addSeries(N_oak_hc3_series);
+    N_oak_pop_chart->addSeries(N_oak_hc4_series);
+
+    N_oak_pop_chart->createDefaultAxes();
+    N_oak_pop_chart->axisX()->setTitleText("Time [steps]");
+    N_oak_pop_chart->axisY()->setTitleText("N oak seed and sapling population [ha]");
 }
 
 

@@ -31,6 +31,7 @@ public:
     std::vector<int> N_height_class_1 = {0, 0};
     std::vector<int> N_height_class_2 = {0, 0};
     std::vector<int> N_height_class_3 = {0, 0};
+    std::vector<int> N_height_class_4 = {0, 0};
     double distance_to_tree;
 
 
