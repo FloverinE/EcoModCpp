@@ -28,7 +28,6 @@ tree::update_species_params() {
         dispersal_factor = 20;
         max_seed_production = 100;
         color = color_birch;
-
     } else if (species == 'o') {
         dispersal_factor = 40;
         max_seed_production = 200;

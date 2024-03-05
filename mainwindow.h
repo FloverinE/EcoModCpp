@@ -36,8 +36,8 @@ private:
     QGraphicsScene *scene;
     QImage image;  // Declare image as a member variable
     // needed for plotting
-    QChart *N_seeds_chart;
-    QChart *N_height_class_chart;
+//    QChart *N_seeds_chart;
+//    QChart *N_height_class_chart;
     QChart *N_birch_pop_chart;
     QChart *N_oak_pop_chart;
 
