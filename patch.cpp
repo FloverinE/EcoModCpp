@@ -43,6 +43,9 @@ float patch::set_distance_to_tree(int x, int y) {
     return dist_to_tree;
 }
 
+void patch::set_burnt() {
+    burnt = true;
+}
 
 //void patch::perform_pop_dynamics(){
 //    for (int i = 0; i < 2; i++) {

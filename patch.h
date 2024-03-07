@@ -18,9 +18,9 @@ public:
     int get_N_birch_seeds(); // Added return type 'int'
     int get_N_oak_seeds();   // Added return type 'int'
     void reset_N_seeds();
-//    void perform_pop_dynamics();
     std::vector<int> get_coords(); //
     float set_distance_to_tree(int x, int y); //
+    void set_burnt();
 
     // Member variables
     std::string patch_id;
@@ -33,7 +33,7 @@ public:
     std::vector<int> N_height_class_3 = {0, 0};
     std::vector<int> N_height_class_4 = {0, 0};
     float distance_to_tree;
-
+    bool burnt = false;
 
 private:
 

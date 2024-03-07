@@ -35,14 +35,21 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    // birch population chart
+    // birch population charts
     N_birch_pop_chart = new QChart();                               // initialize the chart
     ui->N_birch_pop_chart->setChart(N_birch_pop_chart);             // set the chart to the chart view
     ui->N_birch_pop_chart->setRenderHint(QPainter::Antialiasing);   // set the rendering to antialiasing
-    // oak population chart
+    N_birch_burnt_area_chart = new QChart();
+    ui->N_birch_burnt_area_chart->setChart(N_birch_burnt_area_chart);
+    ui->N_birch_burnt_area_chart->setRenderHint(QPainter::Antialiasing);
+
+    // oak population charts
     N_oak_pop_chart = new QChart();
     ui->N_oak_pop_chart->setChart(N_oak_pop_chart);
     ui->N_oak_pop_chart->setRenderHint(QPainter::Antialiasing);
+    N_oak_burnt_area_chart = new QChart();
+    ui->N_oak_burnt_area_chart->setChart(N_oak_burnt_area_chart);
+    ui->N_oak_burnt_area_chart->setRenderHint(QPainter::Antialiasing);
 }
 
 // destructor
@@ -50,7 +57,9 @@ MainWindow::~MainWindow()
 {
     delete ui;                  // delete the ui
     delete N_birch_pop_chart;   // delete the birch population chart
+    delete N_birch_burnt_area_chart;
     delete N_oak_pop_chart;     // delete the oak population chart
+    delete N_oak_burnt_area_chart;
 }
 
 // define the size of the map
@@ -67,7 +76,7 @@ std::uniform_real_distribution<float> dist_float(0.0f, 1.0f);
 
 
 QRgb color_seeds = qRgb(255, 255, 255); // white color
-
+QRgb color_burnt_area = qRgb(0, 0, 0); // black color
 
 // setup procedure grouping sub-procedures
 void MainWindow::on_setup_button_clicked()
@@ -75,7 +84,7 @@ void MainWindow::on_setup_button_clicked()
     setup_map();                    // create the map
     setup_patches();                // create the patches
     setup_trees();                  // create the trees
-    setup_burnt_area();            // create the burnt area if checkbox was activated
+    setup_burnt_area();             // create the burnt area if checkbox was activated
     setup_min_distance_to_tree();   // calculate the minimum distance to the closest tree for each patch
     update_map();                   // update the map drawing
     count_populations();            // count the populations of seeds in each patch (0 at beginning)
@@ -138,40 +147,6 @@ void MainWindow::setup_trees() {
     scene->addPixmap(QPixmap::fromImage(image));                // update the map
 }
 
-QRgb color_burnt_area = qRgb(0, 0, 0); // black color
-
-void MainWindow::setup_burnt_area(){
-    // first check if forest fire is to be simulated
-    bool simulate_fire = ui->sim_fire_checkBox->isChecked();
-
-    cout << "Number of trees before fire: " << trees.size() << endl;
-
-    // write function to create burnt patch in the center of the map
-    if (simulate_fire){
-        int x_center = x_size / 2;
-        int y_center = y_size / 2;
-        for (int i = x_center - 50; i < x_center + 50; i++){
-            for (int j = y_center - 50; j < y_center + 50; j++){
-                image.setPixel(i, j, color_burnt_area);
-            }
-        }
-        scene->addPixmap(QPixmap::fromImage(image));
-    }
-
-    bool deadwood_removed = ui->deadwood_removed_checkBox->isChecked();
-    for (int i = 0; i < trees.size(); i++){
-        if (image.pixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1]) == color_burnt_area){
-            if (deadwood_removed){
-                trees.erase(trees.begin() + i);
-            } else {
-                trees[i].set_burnt();
-            }
-        }
-    }
-    cout << "Number of trees after fire: " << trees.size() << endl;
-}
-
-
 
 // vector of patch objects
 std::vector<patch> patches;
@@ -198,6 +173,51 @@ void MainWindow::setup_patches() {
         }
     }
 }
+
+int N_burnt_patches = 0;    // count the number of burnt patches to calculate area
+
+void MainWindow::setup_burnt_area(){
+    // first check if forest fire is to be simulated
+    bool simulate_fire = ui->sim_fire_checkBox->isChecked();
+
+    cout << "Number of trees before fire: " << trees.size() << endl;
+
+    // create burnt patch in the center of the map
+    if (simulate_fire) {
+        int x_center = x_size / 2;
+        int y_center = y_size / 2;
+        int radius = 50; // Adjust the radius as needed
+
+        for (int i = x_center - radius; i <= x_center + radius; i++) {
+            for (int j = y_center - radius; j <= y_center + radius; j++) {
+                if ((i - x_center) * (i - x_center) + (j - y_center) * (j - y_center) <= radius * radius) {
+                    image.setPixel(i, j, color_burnt_area);
+                    N_burnt_patches++; // increment the number of burnt patches
+                }
+            }
+        }
+        scene->addPixmap(QPixmap::fromImage(image));
+    }
+
+    bool deadwood_removed = ui->deadwood_removed_checkBox->isChecked();
+    for (int i = 0; i < trees.size(); i++){
+        if (image.pixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1]) == color_burnt_area){
+            if (deadwood_removed){
+                trees.erase(trees.begin() + i);
+            } else {
+                trees[i].set_burnt();
+            }
+        }
+    }
+
+    for (auto& p : patches){
+        if (image.pixel(p.x_y_cor[0], p.x_y_cor[1]) == color_burnt_area){
+            p.set_burnt();
+        }
+    }
+    cout << "Number of trees after fire: " << trees.size() << endl;
+}
+
 
 // distance map of min distance to trees for mapping colors
 std::vector<std::vector<float>> distance_map(y_size, std::vector<float>(x_size, 0.0));
@@ -356,10 +376,14 @@ void MainWindow::perform_pop_dynamics() {
 // Vectors to store the population counts as sum of all patches at each time step
 std::vector<std::vector<int>> birch_pop_total; // Birch population
 std::vector<std::vector<int>> oak_pop_total;   // Oak population
+std::vector<std::vector<int>> birch_pop_burnt_area_total; // Birch population in burnt area
+std::vector<std::vector<int>> oak_pop_burnt_area_total;   // Oak population in burnt area
 
 void MainWindow::count_populations() {
     std::vector<int> birch_pop = {0, 0, 0, 0, 0};
     std::vector<int> oak_pop = {0, 0, 0, 0, 0};
+    std::vector<int> birch_pop_burnt_area = {0, 0, 0, 0, 0};
+    std::vector<int> oak_pop_burnt_area = {0, 0, 0, 0, 0};
 
     for (const auto& p : patches) {
         birch_pop[0] += p.N_seeds[0];
@@ -373,23 +397,40 @@ void MainWindow::count_populations() {
         oak_pop[2] += p.N_height_class_2[1];
         oak_pop[3] += p.N_height_class_3[1];
         oak_pop[4] += p.N_height_class_4[1];
+
+        if(p.burnt == true){
+            birch_pop_burnt_area[0] += p.N_seeds[0];
+            birch_pop_burnt_area[1] += p.N_height_class_1[0];
+            birch_pop_burnt_area[2] += p.N_height_class_2[0];
+            birch_pop_burnt_area[3] += p.N_height_class_3[0];
+            birch_pop_burnt_area[4] += p.N_height_class_4[0];
+
+            oak_pop_burnt_area[0] += p.N_seeds[1];
+            oak_pop_burnt_area[1] += p.N_height_class_1[1];
+            oak_pop_burnt_area[2] += p.N_height_class_2[1];
+            oak_pop_burnt_area[3] += p.N_height_class_3[1];
+            oak_pop_burnt_area[4] += p.N_height_class_4[1];
+        }
     }
     birch_pop_total.push_back(birch_pop);
+    birch_pop_burnt_area_total.push_back(birch_pop_burnt_area);
     oak_pop_total.push_back(oak_pop);
-
-
+    oak_pop_burnt_area_total.push_back(oak_pop_burnt_area);
 }
-
 
 void MainWindow::clear_charts()
 {
     //clear all output vectors
     birch_pop_total.clear();
     oak_pop_total.clear();
+    birch_pop_burnt_area_total.clear();
+    oak_pop_burnt_area_total.clear();
 
     // clear charts for setup
     N_birch_pop_chart->removeAllSeries();
+    N_birch_burnt_area_chart->removeAllSeries();
     N_oak_pop_chart->removeAllSeries();
+    N_oak_burnt_area_chart->removeAllSeries();
 }
 
 void MainWindow::draw_charts(){
@@ -409,6 +450,22 @@ void MainWindow::draw_charts(){
     N_birch_hc4_series->setColor(Qt::black); // default color: blue
     N_birch_hc4_series->setName("Height class 4");
 
+    QLineSeries *N_birch_burnt_area_seeds_series = new QLineSeries();
+    N_birch_burnt_area_seeds_series->setColor(Qt::red); // default color: blue
+    N_birch_burnt_area_seeds_series->setName("Seeds");
+    QLineSeries *N_birch_burnt_area_hc1_series = new QLineSeries();
+    N_birch_burnt_area_hc1_series->setColor(Qt::red); // default color: blue
+    N_birch_burnt_area_hc1_series->setName("Height class 1");
+    QLineSeries *N_birch_burnt_area_hc2_series = new QLineSeries();
+    N_birch_burnt_area_hc2_series->setColor(Qt::red); // default color: blue
+    N_birch_burnt_area_hc2_series->setName("Height class 2");
+    QLineSeries *N_birch_burnt_area_hc3_series = new QLineSeries();
+    N_birch_burnt_area_hc3_series->setColor(Qt::red); // default color: blue
+    N_birch_burnt_area_hc3_series->setName("Height class 3");
+    QLineSeries *N_birch_burnt_area_hc4_series = new QLineSeries();
+    N_birch_burnt_area_hc4_series->setColor(Qt::red); // default color: blue
+    N_birch_burnt_area_hc4_series->setName("Height class 4");
+
     QLineSeries *N_oak_seeds_series = new QLineSeries();
     N_oak_seeds_series->setColor(Qt::black); // default color: blue
     N_oak_seeds_series->setName("Seeds");
@@ -425,6 +482,23 @@ void MainWindow::draw_charts(){
     N_oak_hc4_series->setColor(Qt::black); // default color: blue
     N_oak_hc4_series->setName("Height class 4");
 
+    QLineSeries *N_oak_burnt_area_seeds_series = new QLineSeries();
+    N_oak_burnt_area_seeds_series->setColor(Qt::red); // default color: blue
+    N_oak_burnt_area_seeds_series->setName("Seeds");
+    QLineSeries *N_oak_burnt_area_hc1_series = new QLineSeries();
+    N_oak_burnt_area_hc1_series->setColor(Qt::red); // default color: blue
+    N_oak_burnt_area_hc1_series->setName("Height class 1");
+    QLineSeries *N_oak_burnt_area_hc2_series = new QLineSeries();
+    N_oak_burnt_area_hc2_series->setColor(Qt::red); // default color: blue
+    N_oak_burnt_area_hc2_series->setName("Height class 2");
+    QLineSeries *N_oak_burnt_area_hc3_series = new QLineSeries();
+    N_oak_burnt_area_hc3_series->setColor(Qt::red); // default color: blue
+    N_oak_burnt_area_hc3_series->setName("Height class 3");
+    QLineSeries *N_oak_burnt_area_hc4_series = new QLineSeries();
+    N_oak_burnt_area_hc4_series->setColor(Qt::red); // default color: blue
+    N_oak_burnt_area_hc4_series->setName("Height class 4");
+
+
     int number_of_simulation_years = ui->N_years_spinBox->value();
     for (int time = 0; time < number_of_simulation_years; time++) {
         N_birch_seeds_series->append(time, birch_pop_total[time][0]);
@@ -433,11 +507,25 @@ void MainWindow::draw_charts(){
         N_birch_hc3_series->append(time, birch_pop_total[time][3]);
         N_birch_hc4_series->append(time, birch_pop_total[time][4]);
 
+        N_birch_burnt_area_seeds_series->append(time, birch_pop_burnt_area_total[0][time]);
+        N_birch_burnt_area_hc1_series->append(time, birch_pop_burnt_area_total[1][time]);
+        cout << "Birch population: " << birch_pop_total[0][0] << " " << birch_pop_total[0][1] << endl;
+
+        N_birch_burnt_area_hc2_series->append(time, birch_pop_burnt_area_total[2][time]);
+        N_birch_burnt_area_hc3_series->append(time, birch_pop_burnt_area_total[3][time]);
+        N_birch_burnt_area_hc4_series->append(time, birch_pop_burnt_area_total[4][time]);
+
         N_oak_seeds_series->append(time, oak_pop_total[time][0]);
         N_oak_hc1_series->append(time, oak_pop_total[time][1]);
         N_oak_hc2_series->append(time, oak_pop_total[time][2]);
         N_oak_hc3_series->append(time, oak_pop_total[time][3]);
         N_oak_hc4_series->append(time, oak_pop_total[time][4]);
+
+        N_oak_burnt_area_seeds_series->append(time, oak_pop_burnt_area_total[0][time]);
+        N_oak_burnt_area_hc1_series->append(time, oak_pop_burnt_area_total[1][time]);
+        N_oak_burnt_area_hc2_series->append(time, oak_pop_burnt_area_total[2][time]);
+        N_oak_burnt_area_hc3_series->append(time, oak_pop_burnt_area_total[3][time]);
+        N_oak_burnt_area_hc4_series->append(time, oak_pop_burnt_area_total[4][time]);
     }
 
     N_birch_pop_chart->addSeries(N_birch_seeds_series);
@@ -445,20 +533,40 @@ void MainWindow::draw_charts(){
     N_birch_pop_chart->addSeries(N_birch_hc2_series);
     N_birch_pop_chart->addSeries(N_birch_hc3_series);
     N_birch_pop_chart->addSeries(N_birch_hc4_series);
-
     N_birch_pop_chart->createDefaultAxes();
-    N_birch_pop_chart->axisX()->setTitleText("Time [steps]");
+    N_birch_pop_chart->setTitle("Birch seed and sapling population");
+    N_birch_pop_chart->axisX()->setTitleText("time [years]");
     N_birch_pop_chart->axisY()->setTitleText("Birch seed and sapling population [N/ha]");
+
+    N_birch_burnt_area_chart->addSeries(N_birch_burnt_area_seeds_series);
+    N_birch_burnt_area_chart->addSeries(N_birch_burnt_area_hc1_series);
+    N_birch_burnt_area_chart->addSeries(N_birch_burnt_area_hc2_series);
+    N_birch_burnt_area_chart->addSeries(N_birch_burnt_area_hc3_series);
+    N_birch_burnt_area_chart->addSeries(N_birch_burnt_area_hc4_series);
+    N_birch_burnt_area_chart->createDefaultAxes();
+    N_birch_burnt_area_chart->setTitle("Birch seed and sapling population in burnt area");
+    N_birch_burnt_area_chart->axisX()->setTitleText("time [years]");
+    N_birch_burnt_area_chart->axisY()->setTitleText("population density [N/ha]");
 
     N_oak_pop_chart->addSeries(N_oak_seeds_series);
     N_oak_pop_chart->addSeries(N_oak_hc1_series);
     N_oak_pop_chart->addSeries(N_oak_hc2_series);
     N_oak_pop_chart->addSeries(N_oak_hc3_series);
     N_oak_pop_chart->addSeries(N_oak_hc4_series);
-
     N_oak_pop_chart->createDefaultAxes();
-    N_oak_pop_chart->axisX()->setTitleText("Time [steps]");
-    N_oak_pop_chart->axisY()->setTitleText("Oak seed and sapling population [N/ha]");
+    N_oak_pop_chart->setTitle("Oak seed and sapling population");
+    N_oak_pop_chart->axisX()->setTitleText("time [years]");
+    N_oak_pop_chart->axisY()->setTitleText("population density [N/ha]");
+
+    N_oak_burnt_area_chart->addSeries(N_oak_burnt_area_seeds_series);
+    N_oak_burnt_area_chart->addSeries(N_oak_burnt_area_hc1_series);
+    N_oak_burnt_area_chart->addSeries(N_oak_burnt_area_hc2_series);
+    N_oak_burnt_area_chart->addSeries(N_oak_burnt_area_hc3_series);
+    N_oak_burnt_area_chart->addSeries(N_oak_burnt_area_hc4_series);
+    N_oak_burnt_area_chart->createDefaultAxes();
+    N_oak_burnt_area_chart->setTitle("Oak seed and sapling population in burnt area");
+    N_oak_burnt_area_chart->axisX()->setTitleText("time [years]");
+    N_oak_burnt_area_chart->axisY()->setTitleText("population density [N/ha]");
 }
 
 
