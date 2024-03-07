@@ -22,6 +22,7 @@ private slots:
     void setup_map();
     void setup_trees();
     void setup_patches();
+    void setup_burnt_area();
     void perform_dispersal();
     void perform_pop_dynamics();
     void setup_min_distance_to_tree();

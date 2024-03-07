@@ -10,7 +10,7 @@ public:
               const unsigned N_trees);
     landscape();
 
-    std::vector<std::vector<double>> distance_map;
+    std::vector<std::vector<float>> distance_map;
 
 
 private:

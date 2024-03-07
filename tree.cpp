@@ -35,3 +35,7 @@ tree::update_species_params() {
     }
 }
 
+tree::set_burnt() {
+    burnt = true;
+}
+

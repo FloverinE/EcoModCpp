@@ -1,12 +1,8 @@
 // todo
-// more height classes per species
 
-
-/*
- population density graphs
- + first graph for N_seeds
- - all height classes
-*/
+// population density graphs
+// + first graph for N_seeds
+// - all height classes
 
 
 // light availability changing with distance to tree
@@ -15,11 +11,14 @@
 // water availability changing with percent of deadwood remaining
 // - not yet
 
+// load class files
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "patch.h"
 #include "landscape.h"
 #include "tree.h"
+
+// include necessary libraries
 #include <iostream>
 #include <random>
 #include <vector>
@@ -36,59 +35,68 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    N_birch_pop_chart = new QChart();
-    ui->N_birch_pop_chart->setChart(N_birch_pop_chart);
-    ui->N_birch_pop_chart->setRenderHint(QPainter::Antialiasing); // looks prettier
+    // birch population chart
+    N_birch_pop_chart = new QChart();                               // initialize the chart
+    ui->N_birch_pop_chart->setChart(N_birch_pop_chart);             // set the chart to the chart view
+    ui->N_birch_pop_chart->setRenderHint(QPainter::Antialiasing);   // set the rendering to antialiasing
+    // oak population chart
     N_oak_pop_chart = new QChart();
     ui->N_oak_pop_chart->setChart(N_oak_pop_chart);
-    ui->N_oak_pop_chart->setRenderHint(QPainter::Antialiasing); // looks prettier
+    ui->N_oak_pop_chart->setRenderHint(QPainter::Antialiasing);
 }
 
 // destructor
 MainWindow::~MainWindow()
 {
-    delete ui;
-    delete N_birch_pop_chart;
-    delete N_oak_pop_chart;
+    delete ui;                  // delete the ui
+    delete N_birch_pop_chart;   // delete the birch population chart
+    delete N_oak_pop_chart;     // delete the oak population chart
 }
 
 // define the size of the map
-const int x_size = 300; //
-const int y_size = 300;
+// 1 patch = 1 pixel = 5m x 5m = 25m^2
+const int x_size = 300;         // number of horizontal pixels
+const int y_size = 300;         // number of vertical pixels
 
+// declare the random number generators
 std::random_device rd;  // used to obtain a seed for the random number engine
 std::mt19937 gen(rd()); // standard mersenne_twister_engine seeded with rd()
-std::uniform_int_distribution<int> dist_x(0, x_size - 1);   //
-std::uniform_int_distribution<int> dist_y(0, y_size - 1);
+std::uniform_int_distribution<int> dist_x(0, x_size - 1);   // random x coordinate
+std::uniform_int_distribution<int> dist_y(0, y_size - 1);   // random y coordinate in case of rectangular map
 std::uniform_real_distribution<float> dist_float(0.0f, 1.0f);
 
 
 QRgb color_seeds = qRgb(255, 255, 255); // white color
 
 
-//
+// setup procedure grouping sub-procedures
 void MainWindow::on_setup_button_clicked()
 {
-    setup_map();
-    setup_patches();
-    setup_trees();
-    setup_min_distance_to_tree();
-    update_map();
-    count_populations();
-    clear_charts();
+    setup_map();                    // create the map
+    setup_patches();                // create the patches
+    setup_trees();                  // create the trees
+    setup_burnt_area();            // create the burnt area if checkbox was activated
+    setup_min_distance_to_tree();   // calculate the minimum distance to the closest tree for each patch
+    update_map();                   // update the map drawing
+    count_populations();            // count the populations of seeds in each patch (0 at beginning)
+    clear_charts();                 // clear the population charts
 }
 
 void MainWindow::on_go_button_clicked()
 {
+    // get the number of years to simulate from the ui spin box
     int number_of_simulation_years = ui->N_years_spinBox->value();
+    // loop over the number of years
     for(int i = 0; i < number_of_simulation_years; i++){
-        perform_dispersal();
-        perform_pop_dynamics();
-        count_populations();
+        perform_dispersal();        // seeds dispersal per tree
+        perform_pop_dynamics();     // seed and sapling population dynamics according to matrix model
+        count_populations();        // count the populations of seeds in each patch
     }
-    draw_charts();
+    draw_charts();                  // after simulation, draw the population charts for birch and oak
 }
 
+// declare the scene and the image
+// default white background
 void MainWindow::setup_map() {
     scene = new QGraphicsScene;
     // and hook the scene to main_map
@@ -101,14 +109,15 @@ void MainWindow::setup_map() {
     scene->addPixmap(QPixmap::fromImage(image));
 }
 
-
+// vector of tree ids
 std::vector<int> tree_ids;
+// vector of tree objects
 std::vector<tree> trees;
 
 void MainWindow::setup_trees() {
     trees.clear();
     int N_trees = ui->N_trees_spinBox->value();
-    double species_ratio = ui->species_ratio_spinBox->value();
+    float species_ratio = ui->species_ratio_spinBox->value();
     int N_birch_trees = N_trees * (1 - species_ratio);
 
     for (int i = 0; i < N_trees; ++i) { // loop over the number of trees
@@ -129,9 +138,52 @@ void MainWindow::setup_trees() {
     scene->addPixmap(QPixmap::fromImage(image));                // update the map
 }
 
+QRgb color_burnt_area = qRgb(0, 0, 0); // black color
+
+void MainWindow::setup_burnt_area(){
+    // first check if forest fire is to be simulated
+    bool simulate_fire = ui->sim_fire_checkBox->isChecked();
+
+    cout << "Number of trees before fire: " << trees.size() << endl;
+
+    // write function to create burnt patch in the center of the map
+    if (simulate_fire){
+        int x_center = x_size / 2;
+        int y_center = y_size / 2;
+        for (int i = x_center - 50; i < x_center + 50; i++){
+            for (int j = y_center - 50; j < y_center + 50; j++){
+                image.setPixel(i, j, color_burnt_area);
+            }
+        }
+        scene->addPixmap(QPixmap::fromImage(image));
+    }
+
+    bool deadwood_removed = ui->deadwood_removed_checkBox->isChecked();
+    for (int i = 0; i < trees.size(); i++){
+        if (image.pixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1]) == color_burnt_area){
+            if (deadwood_removed){
+                trees.erase(trees.begin() + i);
+            } else {
+                trees[i].set_burnt();
+            }
+        }
+    }
+    cout << "Number of trees after fire: " << trees.size() << endl;
+}
+
+
+
+// vector of patch objects
 std::vector<patch> patches;
 std::unordered_map<std::string, patch*> patch_map;  // Map to efficiently look up patches by coordinates
 
+/*
+    Patch setup procedure
+    - clear the patches vector
+    - clear the patch_map // not used
+    - loop over the x and y coordinates and create the according patch_id
+    - create the patch object and add it to the patches vector
+ */
 
 void MainWindow::setup_patches() {
     patches.clear();
@@ -141,53 +193,20 @@ void MainWindow::setup_patches() {
         for (int j = 0; j < y_size; j++) {
             std::string patch_id = std::to_string(i) + "_" + std::to_string(j);
             patches.emplace_back(patch_id, std::vector<int>{i, j}, std::vector<int>{0, 0});
-
             // Populate the patch_map for efficient lookup
             patch_map[patch_id] = &patches.back();
         }
     }
-    // use the reset_N_seedlings() function to reset the number of seedlings in all patches
-    //    for (auto& p : patches) {
-    //        p.reset_N_seeds();
-    //    }
-    //    std::cout << patches[1].N_seeds[1] << std::endl;
-    //    std::cout << "Number of patches: " << patches.size() << std::endl; // works
-    //    std::cout << "Number of patches in patch_map: " << patch_map.size() << std::endl; // works
-
-    //    // compute distance to tree
-    //    for (auto& t : trees) {
-    //        for (auto& p : patches) {
-    ////            float distance = sqrt(pow(t.x_y_cor[0] - p.x_y_cor[0], 2) + pow(t.x_y_cor[1] - p.x_y_cor[1], 2));
-    ////            p.distance_to_tree[t.id] = distance;
-    //            std::vector<float> distances = {0};
-    //            // push back distances per patch to tree relation
-    //            distances.push_back(p.set_distance_to_tree(t.x_y_cor[0], t.x_y_cor[1]));
-    //            auto min_distance = std::min_element(distances.begin(), distances.end());
-
-    //            cout << "Debug: Distance to tree " << t.id << " from patch " << p.patch_id << " is " << distances[1] << endl;
-    ////            p.distance_to_tree = p.set_distance_to_tree(t.x_y_cor[0], t.x_y_cor[1]);
-
-    //        }
-    //    }
 }
 
-//// compute distance to tree
-//void MainWindow::setup_distance_to_tree() {
-//    for (auto& t : trees) {
-//        for (auto& p : patches) {
-//            std::vector<float> distances = {0};
-//            float distance = sqrt(pow(t.x_y_cor[0] - p.x_y_cor[0], 2) + pow(t.x_y_cor[1] - p.x_y_cor[1], 2));
-//            p.distance_to_tree[t.id] = distance;
-//        }
-//    }
-//}
-
-
-#include <vector>
-#include <limits>  // for std::numeric_limits
-
 // distance map of min distance to trees for mapping colors
-std::vector<std::vector<double>> distance_map(y_size, std::vector<double>(x_size, 0.0));
+std::vector<std::vector<float>> distance_map(y_size, std::vector<float>(x_size, 0.0));
+
+/*
+    Procedure to calculate the minimum euclidean distance between each patch and the closest tree
+    - loop over the patches and calculate the distance to each tree
+    - store the minimum distance in the patch object
+ */
 
 void MainWindow::setup_min_distance_to_tree() {
     if (trees.empty()) {                                       // check if there are any trees to compute distance to
@@ -198,7 +217,7 @@ void MainWindow::setup_min_distance_to_tree() {
             std::vector<float> distances(trees.size(), 0.0f);  // initialize distances with 0 for each patch
 
             for (unsigned int i = 0; i < trees.size(); ++i) {  // loop over the trees
-                double distance = sqrt(pow(trees[i].x_y_cor[0] - p.x_y_cor[0], 2) + pow(trees[i].x_y_cor[1] - p.x_y_cor[1], 2));
+                float distance = sqrt(pow(trees[i].x_y_cor[0] - p.x_y_cor[0], 2) + pow(trees[i].x_y_cor[1] - p.x_y_cor[1], 2));
                 distances[i] = distance;
             }
 
@@ -206,7 +225,7 @@ void MainWindow::setup_min_distance_to_tree() {
             p.distance_to_tree = *min_distance_iter;                    // store the minimum distance
 
             const QColor color(0, 255 * p.distance_to_tree / 425.0, 0); // color based on distance to tree
-            image.setPixelColor(p.x_y_cor[0], p.x_y_cor[1], color);     // set pixel color
+//            image.setPixelColor(p.x_y_cor[0], p.x_y_cor[1], color);     // set pixel color
         }
         cout << "Debug: Min distance to tree from patch 0_0 is " << patches[0].distance_to_tree << endl;
     }
@@ -233,9 +252,9 @@ void MainWindow::perform_dispersal() {
     for (auto& t : trees) {
         int real_seed_production = t.max_seed_production * dist_float(gen);     // real seed production as random number * max seed production
         for (int i = 1; i <= real_seed_production; i++) {
-            double direction = 2 * M_PI * i / real_seed_production;             // direction of seed dispersal
+            float direction = 2 * M_PI * i / real_seed_production;             // direction of seed dispersal
 
-            double distance_decay = std::pow(2, -3 * dist_float(gen));          // distance decay of seed dispersal
+            float distance_decay = std::pow(2, -3 * dist_float(gen));          // distance decay of seed dispersal
 
             int offset_x = static_cast<int>(t.dispersal_factor * distance_decay * cos(direction));
             int offset_y = static_cast<int>(t.dispersal_factor * distance_decay * sin(direction));
@@ -259,38 +278,6 @@ void MainWindow::perform_dispersal() {
     }
     scene->addPixmap(QPixmap::fromImage(image));
 }
-
-//void MainWindow::perform_pop_dynamics() {
-//    for(unsigned int i = 0; i < patches.size(); i++){
-//        //        patches[i].update_N_seeds(100, 'o');
-//        //        cout << "N oak seeds " << patches[i].patch_id << " " << patches[i].N_seeds[1] << endl; // Use index 1 for oak seeds
-//        for (int j = 0; j < 2; j++) {
-//            if(patches[i].N_seeds[j] > 0){
-//                for (int k = 0; k < patches[i].N_seeds[j]; k++) {
-//                    // Mortality
-//                    if (dist_float(gen) < patches[i].mortality_rate) {
-//                        patches[i].N_seeds[j] -= 1;
-//                        patches[i].N_height_class_1[j] -= 1;
-//                        patches[i].N_height_class_2[j] -= 1;
-//                        patches[i].N_height_class_3[j] -= 1;
-//                        patches[i].N_height_class_4[j] -= 1;
-
-//                        // Growth into next height class
-//                    } else if (dist_float(gen) < patches[i].growth_rate) {
-//                        patches[i].N_height_class_1[j] += 1;
-//                        patches[i].N_seeds[j] -= 1;
-//                    }
-//                }
-//                cout << "N oak seeds after mort and growth in patch" <<
-//                    patches[i].patch_id << " " << patches[i].N_height_class_1[1] << endl; // Use index 1 for oak seeds
-//            }
-//        }
-//        //        cout << "N oak seeds after mort and growth in patch" <<
-//        //            patches[i].patch_id << " " << patches[i].N_height_class_1[1] << endl; // Use index 1 for oak seeds
-//    }
-//}
-
-
 
 /*
  Function to perform population dynamics on the patches
@@ -367,9 +354,6 @@ void MainWindow::perform_pop_dynamics() {
 
 
 // Vectors to store the population counts as sum of all patches at each time step
-std::vector<std::vector<int>> N_seeds_total;    // Seeds
-std::vector<std::vector<int>> N_hc1_total;      // Height class 1
-
 std::vector<std::vector<int>> birch_pop_total; // Birch population
 std::vector<std::vector<int>> oak_pop_total;   // Oak population
 
@@ -393,35 +377,19 @@ void MainWindow::count_populations() {
     birch_pop_total.push_back(birch_pop);
     oak_pop_total.push_back(oak_pop);
 
-    // Create a vector to store the counts for the current time step
-    std::vector<int> seed_counts = {0, 0};
-    std::vector<int> hc1_counts  = {0, 0};
 
-    // Iterate through patches and update counts
-    for (const auto& p : patches) {
-        seed_counts[0] += p.N_seeds[0];
-        seed_counts[1] += p.N_seeds[1];
-
-        hc1_counts[0] += p.N_height_class_1[0];
-        hc1_counts[1] += p.N_height_class_1[1];
-    }
-    // Push back the counts for the current time step
-    N_seeds_total.push_back(seed_counts);
-    N_hc1_total.push_back(hc1_counts);
 }
 
 
 void MainWindow::clear_charts()
 {
     //clear all output vectors
-    //    N_seeds_vector.clear();
+    birch_pop_total.clear();
+    oak_pop_total.clear();
 
     // clear charts for setup
-    //    N_seeds_chart->removeAllSeries();
-    //    N_height_class_chart->removeAllSeries();
     N_birch_pop_chart->removeAllSeries();
     N_oak_pop_chart->removeAllSeries();
-
 }
 
 void MainWindow::draw_charts(){
@@ -471,7 +439,6 @@ void MainWindow::draw_charts(){
         N_oak_hc3_series->append(time, oak_pop_total[time][3]);
         N_oak_hc4_series->append(time, oak_pop_total[time][4]);
     }
-
 
     N_birch_pop_chart->addSeries(N_birch_seeds_series);
     N_birch_pop_chart->addSeries(N_birch_hc1_series);

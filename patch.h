@@ -20,7 +20,7 @@ public:
     void reset_N_seeds();
 //    void perform_pop_dynamics();
     std::vector<int> get_coords(); //
-    double set_distance_to_tree(int x, int y); //
+    float set_distance_to_tree(int x, int y); //
 
     // Member variables
     std::string patch_id;
@@ -32,7 +32,7 @@ public:
     std::vector<int> N_height_class_2 = {0, 0};
     std::vector<int> N_height_class_3 = {0, 0};
     std::vector<int> N_height_class_4 = {0, 0};
-    double distance_to_tree;
+    float distance_to_tree;
 
 
 private:

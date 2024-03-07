@@ -19,12 +19,14 @@ public:
     char species;
     int max_seed_production;
     int dispersal_factor;
-    update_species_params();
-    QRgb color;
+    QRgb color;                 // color of tree species (green for birch or brown for oak)
+    update_species_params();    // update the parameters based on species assigned in setup procedure
+    set_burnt();
 
 
 private:
              // species of tree, "b" for birch, "o" for oak
+    bool burnt = false;         // tree is not burnt by default
 };
 
 #endif // TREE_H

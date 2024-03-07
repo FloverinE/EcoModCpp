@@ -8,6 +8,7 @@ patch::patch() {}
 patch::patch(std::string patch_id, std::vector<int> x_y_cor, std::vector<int> N_seeds)
     : patch_id(patch_id), x_y_cor(x_y_cor), N_seeds(N_seeds) {}
 
+// function to add (dispersal) and subtract (mortality) seeds to patch
 void patch::update_N_seeds(int count, char species) {
     if (species == 'b') {
         N_seeds[0] += count;
@@ -16,10 +17,10 @@ void patch::update_N_seeds(int count, char species) {
     }
 }
 
-void patch::reset_N_seeds() {
-    N_seeds[0] = 0;
-    N_seeds[1] = 0;
-}
+//void patch::reset_N_seeds() {
+//    N_seeds[0] = 0;
+//    N_seeds[1] = 0;
+//}
 
 
 int patch::get_N_birch_seeds() {
@@ -37,8 +38,8 @@ std::vector<int> patch::get_coords() {
     return x_y_cor;
 }
 
-double patch::set_distance_to_tree(int x, int y) {
-    double dist_to_tree = sqrt(pow(x - x_y_cor[0], 2) + pow(y - x_y_cor[1], 2));
+float patch::set_distance_to_tree(int x, int y) {
+    float dist_to_tree = sqrt(pow(x - x_y_cor[0], 2) + pow(y - x_y_cor[1], 2));
     return dist_to_tree;
 }
 
