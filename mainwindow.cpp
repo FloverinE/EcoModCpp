@@ -35,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    number_of_simulation_years = ui->N_years_spinBox->value();      // set the number of simulation years to the value of the ui spinbox
     // birch population charts
     N_birch_pop_chart = new QChart();                               // initialize the chart
     ui->N_birch_pop_chart->setChart(N_birch_pop_chart);             // set the chart to the chart view
@@ -94,7 +95,7 @@ void MainWindow::on_setup_button_clicked()
 void MainWindow::on_go_button_clicked()
 {
     // get the number of years to simulate from the ui spin box
-    int number_of_simulation_years = ui->N_years_spinBox->value();
+//    int number_of_simulation_years = ui->N_years_spinBox->value();
     // loop over the number of years
     for(int i = 0; i < number_of_simulation_years; i++){
         perform_dispersal();        // seeds dispersal per tree
@@ -422,8 +423,8 @@ void MainWindow::clear_charts()
 {
     //clear all output vectors
     birch_pop_total.clear();
-    oak_pop_total.clear();
     birch_pop_burnt_area_total.clear();
+    oak_pop_total.clear();
     oak_pop_burnt_area_total.clear();
 
     // clear charts for setup
@@ -451,19 +452,19 @@ void MainWindow::draw_charts(){
     N_birch_hc4_series->setName("Height class 4");
 
     QLineSeries *N_birch_burnt_area_seeds_series = new QLineSeries();
-    N_birch_burnt_area_seeds_series->setColor(Qt::red); // default color: blue
+    N_birch_burnt_area_seeds_series->setColor(Qt::black); // default color: blue
     N_birch_burnt_area_seeds_series->setName("Seeds");
     QLineSeries *N_birch_burnt_area_hc1_series = new QLineSeries();
-    N_birch_burnt_area_hc1_series->setColor(Qt::red); // default color: blue
+    N_birch_burnt_area_hc1_series->setColor(Qt::black); // default color: blue
     N_birch_burnt_area_hc1_series->setName("Height class 1");
     QLineSeries *N_birch_burnt_area_hc2_series = new QLineSeries();
-    N_birch_burnt_area_hc2_series->setColor(Qt::red); // default color: blue
+    N_birch_burnt_area_hc2_series->setColor(Qt::black); // default color: blue
     N_birch_burnt_area_hc2_series->setName("Height class 2");
     QLineSeries *N_birch_burnt_area_hc3_series = new QLineSeries();
-    N_birch_burnt_area_hc3_series->setColor(Qt::red); // default color: blue
+    N_birch_burnt_area_hc3_series->setColor(Qt::black); // default color: blue
     N_birch_burnt_area_hc3_series->setName("Height class 3");
     QLineSeries *N_birch_burnt_area_hc4_series = new QLineSeries();
-    N_birch_burnt_area_hc4_series->setColor(Qt::red); // default color: blue
+    N_birch_burnt_area_hc4_series->setColor(Qt::black); // default color: blue
     N_birch_burnt_area_hc4_series->setName("Height class 4");
 
     QLineSeries *N_oak_seeds_series = new QLineSeries();
@@ -483,23 +484,23 @@ void MainWindow::draw_charts(){
     N_oak_hc4_series->setName("Height class 4");
 
     QLineSeries *N_oak_burnt_area_seeds_series = new QLineSeries();
-    N_oak_burnt_area_seeds_series->setColor(Qt::red); // default color: blue
+    N_oak_burnt_area_seeds_series->setColor(Qt::black); // default color: blue
     N_oak_burnt_area_seeds_series->setName("Seeds");
     QLineSeries *N_oak_burnt_area_hc1_series = new QLineSeries();
-    N_oak_burnt_area_hc1_series->setColor(Qt::red); // default color: blue
+    N_oak_burnt_area_hc1_series->setColor(Qt::black); // default color: blue
     N_oak_burnt_area_hc1_series->setName("Height class 1");
     QLineSeries *N_oak_burnt_area_hc2_series = new QLineSeries();
-    N_oak_burnt_area_hc2_series->setColor(Qt::red); // default color: blue
+    N_oak_burnt_area_hc2_series->setColor(Qt::black); // default color: blue
     N_oak_burnt_area_hc2_series->setName("Height class 2");
     QLineSeries *N_oak_burnt_area_hc3_series = new QLineSeries();
-    N_oak_burnt_area_hc3_series->setColor(Qt::red); // default color: blue
+    N_oak_burnt_area_hc3_series->setColor(Qt::black); // default color: blue
     N_oak_burnt_area_hc3_series->setName("Height class 3");
     QLineSeries *N_oak_burnt_area_hc4_series = new QLineSeries();
-    N_oak_burnt_area_hc4_series->setColor(Qt::red); // default color: blue
+    N_oak_burnt_area_hc4_series->setColor(Qt::black); // default color: blue
     N_oak_burnt_area_hc4_series->setName("Height class 4");
 
 
-    int number_of_simulation_years = ui->N_years_spinBox->value();
+//    int number_of_simulation_years    = ui->N_years_spinBox->value();
     for (int time = 0; time < number_of_simulation_years; time++) {
         N_birch_seeds_series->append(time, birch_pop_total[time][0]);
         N_birch_hc1_series->append(time, birch_pop_total[time][1]);
@@ -509,8 +510,6 @@ void MainWindow::draw_charts(){
 
         N_birch_burnt_area_seeds_series->append(time, birch_pop_burnt_area_total[0][time]);
         N_birch_burnt_area_hc1_series->append(time, birch_pop_burnt_area_total[1][time]);
-        cout << "Birch population: " << birch_pop_total[0][0] << " " << birch_pop_total[0][1] << endl;
-
         N_birch_burnt_area_hc2_series->append(time, birch_pop_burnt_area_total[2][time]);
         N_birch_burnt_area_hc3_series->append(time, birch_pop_burnt_area_total[3][time]);
         N_birch_burnt_area_hc4_series->append(time, birch_pop_burnt_area_total[4][time]);
@@ -522,10 +521,10 @@ void MainWindow::draw_charts(){
         N_oak_hc4_series->append(time, oak_pop_total[time][4]);
 
         N_oak_burnt_area_seeds_series->append(time, oak_pop_burnt_area_total[0][time]);
-        N_oak_burnt_area_hc1_series->append(time, oak_pop_burnt_area_total[1][time]);
-        N_oak_burnt_area_hc2_series->append(time, oak_pop_burnt_area_total[2][time]);
-        N_oak_burnt_area_hc3_series->append(time, oak_pop_burnt_area_total[3][time]);
-        N_oak_burnt_area_hc4_series->append(time, oak_pop_burnt_area_total[4][time]);
+//        N_oak_burnt_area_hc1_series->append(time, oak_pop_burnt_area_total[1][time]);
+//        N_oak_burnt_area_hc2_series->append(time, oak_pop_burnt_area_total[2][time]);
+//        N_oak_burnt_area_hc3_series->append(time, oak_pop_burnt_area_total[3][time]);
+//        N_oak_burnt_area_hc4_series->append(time, oak_pop_burnt_area_total[4][time]);
     }
 
     N_birch_pop_chart->addSeries(N_birch_seeds_series);

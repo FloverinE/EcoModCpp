@@ -37,6 +37,9 @@ private:
     QGraphicsScene *scene;
     QImage image;  // Declare image as a member variable
 
+    // Vectors needed to store simulation output
+    int number_of_simulation_years;
+
     // needed for plotting
     QChart *N_birch_pop_chart;
     QChart *N_birch_burnt_area_chart;
