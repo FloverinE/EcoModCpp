@@ -30,7 +30,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // birch population charts
     N_birch_pop_chart = new QChart();                               // initialize the chart
-    ui->N_birch_pop_chart->setChart(N_birch_pop_chart);             // set the chart to the chart view
+    ui->N_birch_pop_chart->setChart(N_birch_pop_chart);             // assign the chart to the QChartView objects in the ui
     ui->N_birch_pop_chart->setRenderHint(QPainter::Antialiasing);   // set the rendering to antialiasing
     N_birch_burnt_area_chart = new QChart();
     ui->N_birch_burnt_area_chart->setChart(N_birch_burnt_area_chart);
@@ -84,6 +84,12 @@ void MainWindow::on_setup_button_clicked()
     update_map();                   // update the map drawing
 }
 
+/**
+ * @brief MainWindow::on_go_button_clicked()
+ * Function to simulate the annual dispersal and population dynamics procedures
+ */
+
+
 void MainWindow::on_go_button_clicked()
 {
     // warning for zero trees
@@ -104,8 +110,10 @@ void MainWindow::on_go_button_clicked()
     draw_charts();                  // after simulation, draw the population charts for birch and oak
 }
 
-// declare the scene and the image
-// default white background
+/**
+ * @brief MainWindow::setup_map
+ * Function to setup the map and assign the user selected value for the number of years to be simulated
+ */
 void MainWindow::setup_map() {
     scene = new QGraphicsScene;
     // and hook the scene to main_map
@@ -119,15 +127,18 @@ void MainWindow::setup_map() {
     scene->addPixmap(QPixmap::fromImage(image));
 }
 
+/**
+ * @brief MainWindow::setup_trees
+ * Function to place the trees on the map and assign species according to the user selected ratio of birch to oak
+ */
 std::vector<tree> trees;        // vector of tree objects
-
 void MainWindow::setup_trees() {
     trees.clear();
     N_trees = ui->N_trees_spinBox->value() * area_to_ha_conv_factor; // get the number of trees from the ui spinbox, multiply by factor to scale to ha
     float species_ratio = ui->species_ratio_spinBox->value();
     int N_birch_trees = N_trees * (1 - species_ratio);
-
-    for (int i = 0; i < N_trees; ++i) { // loop over the number of trees
+    // loop over the number of trees
+    for (int i = 0; i < N_trees; ++i) {
         trees.emplace_back(i, std::vector<int>{}, 'b', 1, 10);  // create dummy tree object
         trees[i].x_y_cor = {rand_x_cor(gen), rand_y_cor(gen)};          // assign random x and y coordinates
         if (i < N_birch_trees){                                 // assign birch based on species_ratio
@@ -144,20 +155,14 @@ void MainWindow::setup_trees() {
     scene->addPixmap(QPixmap::fromImage(image));                // update the map
 }
 
-
-// vector of patch objects
-std::vector<patch> patches;
-
-/*
-    Patch setup procedure
+/**
+ * @brief MainWindow::setup_patches
+ *  Patch setup procedure
     - clear the patches vector
     - loop over the x and y coordinates and create the according patch_id
     - create the patch object and add it to the patches vector
  */
-/**
- * @brief MainWindow::setup_patches
- * @details
- */
+std::vector<patch> patches; // vector of patch objects
 void MainWindow::setup_patches() {
     patches.clear();
 
@@ -170,8 +175,9 @@ void MainWindow::setup_patches() {
 }
 
 
-/*
- Procedure to setup the area burnt by fire
+/**
+ * @brief setup_burnt_area
+ *  Function to setup the area burnt by fire
   - circular shape, user determines radius from center of the map using spinBox
   - burnt patches are painted black
   - deadwood removal checkbox determines the if burnt trees are removed and therefore more light, but less water availability
@@ -232,13 +238,12 @@ void MainWindow::setup_burnt_area(){
     }
 }
 
-
-/*
-    Procedure to calculate the minimum euclidean distance between each patch and the closest tree
-    - loop over the patches and calculate the distance to each tree
-    - store the minimum distance in the patch object
+/**
+ * @brief MainWindow::setup_min_distance_to_tree
+ * Function to calculate the minimum euclidean distance between each patch and the closest tree
+ * - loop over the patches and calculate the distance to each tree
+ * - store the minimum distance in the patch object
  */
-
 void MainWindow::setup_min_distance_to_tree() {
     if (trees.empty()) {                                        // check if there are any trees to compute distance to
         std::cerr << "Error: No trees to compute distance to" << std::endl;
@@ -271,7 +276,14 @@ void MainWindow::setup_min_distance_to_tree() {
     scene->addPixmap(QPixmap::fromImage(image)); // update the map
 }
 
-
+/**
+ * @brief MainWindow::perform_dispersal
+ * Procedure that is conducted each time step
+ * - loop over the trees and calculate the real seed production as a random value between 0 and 1 multiplied by the max seed production
+ * - seeds are dispersed in a uniform random 360 degree direction
+ * - dispersal distance is modelled as exponential function
+ * - seeds are registered to the destination patch
+ */
 void MainWindow::perform_dispersal() {
     for (auto& t : trees) {
         if(t.burnt == false){
@@ -304,17 +316,18 @@ void MainWindow::perform_dispersal() {
     scene->addPixmap(QPixmap::fromImage(image));
 }
 
-/* perform_pop_dynamics()
- Function to perform population dynamics on the patches
- - working like a matrix model with 5 stages (seeds -> germination -> height class 1 to 4)
- - probabilistic mortality and growth into next stages, rest is survival
-    first: advancement of height class 3 into 4 to not have saplings from height class 2
-        advancing and dying at the same time
-     next:  continue with height class 3 down to the seeds
+/**
+ * @brief MainWindow::perform_pop_dynamics
+ *  Procdure that is conducted each time step
+ * - working like a matrix model with 5 stages (seeds -> germination -> height class 1 to 4)
+ * - probabilistic mortality and growth into next stages, rest is survival
+ *    first: advancement of height class 3 into 4 to not have saplings from height class 2
+ *        advancing and dying at the same time
+ *    next:  continue with height class 3 down to the seeds
 
- possible extension:
- - implement growth rate dependent on height class,
-    i.e. higher growth rate for lower height classes but lower if the taller saplings create too much shade
+ * possible extension:
+ * - implement growth rate dependent on height class,
+ *   i.e. higher growth rate for lower height classes but lower if the taller saplings create too much shade
  */
 void MainWindow::perform_pop_dynamics() {
     for(unsigned int i = 0; i < patches.size(); i++){ // loop over all patches
@@ -379,9 +392,11 @@ void MainWindow::perform_pop_dynamics() {
     }
 }
 
-/* count_populations()
- Function to count the population size of the different life stages from seed to height class 1-4 in the patches
- - counting the population size for each species and for burnt patches separately
+/**
+ * @brief MainWindow::count_populations
+ * Procedure conducted each time step
+ * count the population size of the different life stages from seed to height class 1-4 in the patches
+ * population size counted separately for each species and for burnt patches
  */
 void MainWindow::count_populations() {
     std::vector<int> birch_pop = {0, 0, 0, 0, 0};
@@ -423,10 +438,11 @@ void MainWindow::count_populations() {
     oak_pop_burnt_area_total.push_back(oak_pop_burnt_area);
 }
 
-/* update_map()
- Function to "refresh" the map according to present population density of all seeds and saplings per patch
- - N_seeds_saplings are scaled in green
- - trees are displayed as 5 * 5 pixels for improved visibility
+/**
+ * @brief MainWindow::update_map
+ *  Function to "refresh" the map according to present population density of all seeds and saplings per patch
+ * - N_seeds_saplings are scaled in green
+ * - trees are displayed as 5 * 5 pixels for improved visibility
  */
 void MainWindow::update_map(){ // not used as of now
     std::vector<int> N_seeds_saplings(patches.size(), 0);
@@ -456,8 +472,9 @@ void MainWindow::update_map(){ // not used as of now
     scene->addPixmap(QPixmap::fromImage(image));
 }
 
-/* clear_charts()
- Function to clear all output vectors and charts
+/**
+ * @brief MainWindow::clear_charts
+ *  Function to clear all output vectors and charts
  */
 void MainWindow::clear_charts()
 {

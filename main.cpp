@@ -1,5 +1,8 @@
 #include "mainwindow.h"
 
+#define CATCH_CONFIG_MAIN
+#include "catch.hpp"
+
 #include <QApplication>
 
 int main(int argc, char *argv[])

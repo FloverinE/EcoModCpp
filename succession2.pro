@@ -12,7 +12,8 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     patch.cpp \
-    tree.cpp
+    tree.cpp \
+    unit_test.cpp
 
 HEADERS += \
     mainwindow.h \
