@@ -35,7 +35,14 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    number_of_simulation_years = ui->N_years_spinBox->value();      // set the number of simulation years to the value of the ui spinbox
+    int number_of_simulation_years = 1;
+
+    // Initialize vectors here with the desired size
+    birch_pop_total.resize(number_of_simulation_years, std::vector<int>(5, 0));
+    oak_pop_total.resize(number_of_simulation_years, std::vector<int>(5, 0));
+    birch_pop_burnt_area_total.resize(number_of_simulation_years, std::vector<int>(5, 0));
+    oak_pop_burnt_area_total.resize(number_of_simulation_years, std::vector<int>(5, 0));
+
     // birch population charts
     N_birch_pop_chart = new QChart();                               // initialize the chart
     ui->N_birch_pop_chart->setChart(N_birch_pop_chart);             // set the chart to the chart view
@@ -75,10 +82,6 @@ std::uniform_int_distribution<int> dist_x(0, x_size - 1);   // random x coordina
 std::uniform_int_distribution<int> dist_y(0, y_size - 1);   // random y coordinate in case of rectangular map
 std::uniform_real_distribution<float> dist_float(0.0f, 1.0f);
 
-
-QRgb color_seeds = qRgb(255, 255, 255); // white color
-QRgb color_burnt_area = qRgb(0, 0, 0); // black color
-
 // setup procedure grouping sub-procedures
 void MainWindow::on_setup_button_clicked()
 {
@@ -94,8 +97,13 @@ void MainWindow::on_setup_button_clicked()
 
 void MainWindow::on_go_button_clicked()
 {
+    cout << N_trees << " trees" << endl;
+    if (N_trees == 0) {
+        // Handle the case of zero trees (e.g., display an error message)
+        cout << "Error: Cannot simulate with zero trees." << endl;
+        return;
+    }
     // get the number of years to simulate from the ui spin box
-//    int number_of_simulation_years = ui->N_years_spinBox->value();
     // loop over the number of years
     for(int i = 0; i < number_of_simulation_years; i++){
         perform_dispersal();        // seeds dispersal per tree
@@ -111,6 +119,7 @@ void MainWindow::setup_map() {
     scene = new QGraphicsScene;
     // and hook the scene to main_map
     ui->main_map->setScene(scene);
+    number_of_simulation_years = ui->N_years_spinBox->value();      // set the number of simulation years to the value of the ui spinbox
 
     // declare and initialize an image
     ui->main_map->resize(x_size, y_size);
@@ -119,14 +128,12 @@ void MainWindow::setup_map() {
     scene->addPixmap(QPixmap::fromImage(image));
 }
 
-// vector of tree ids
-std::vector<int> tree_ids;
-// vector of tree objects
-std::vector<tree> trees;
+std::vector<int> tree_ids;      // vector of tree ids
+std::vector<tree> trees;        // vector of tree objects
 
 void MainWindow::setup_trees() {
     trees.clear();
-    int N_trees = ui->N_trees_spinBox->value();
+    N_trees = ui->N_trees_spinBox->value();
     float species_ratio = ui->species_ratio_spinBox->value();
     int N_birch_trees = N_trees * (1 - species_ratio);
 
@@ -187,7 +194,7 @@ void MainWindow::setup_burnt_area(){
     if (simulate_fire) {
         int x_center = x_size / 2;
         int y_center = y_size / 2;
-        int radius = 50; // Adjust the radius as needed
+        int radius = 75; // Adjust the radius as needed
 
         for (int i = x_center - radius; i <= x_center + radius; i++) {
             for (int j = y_center - radius; j <= y_center + radius; j++) {
@@ -201,15 +208,17 @@ void MainWindow::setup_burnt_area(){
     }
 
     bool deadwood_removed = ui->deadwood_removed_checkBox->isChecked();
-    for (int i = 0; i < trees.size(); i++){
-        if (image.pixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1]) == color_burnt_area){
-            if (deadwood_removed){
-                trees.erase(trees.begin() + i);
+    for (size_t i = 0; i < trees.size(); ++i) {
+        if (image.pixel(trees[i].x_y_cor[0], trees[i].x_y_cor[1]) == color_burnt_area) {
+            if (deadwood_removed) {
+                trees.erase(trees.begin() + static_cast<int>(i));
+                --i;  // Adjust index after erasing an element
             } else {
                 trees[i].set_burnt();
             }
         }
     }
+
 
     for (auto& p : patches){
         if (image.pixel(p.x_y_cor[0], p.x_y_cor[1]) == color_burnt_area){
@@ -219,9 +228,6 @@ void MainWindow::setup_burnt_area(){
     cout << "Number of trees after fire: " << trees.size() << endl;
 }
 
-
-// distance map of min distance to trees for mapping colors
-std::vector<std::vector<float>> distance_map(y_size, std::vector<float>(x_size, 0.0));
 
 /*
     Procedure to calculate the minimum euclidean distance between each patch and the closest tree
@@ -292,7 +298,7 @@ void MainWindow::perform_dispersal() {
                     if (p.x_y_cor[0] == new_x && p.x_y_cor[1] == new_y) {
                         p.update_N_seeds(1, t.species);
                         //                        cout << p.get_N_oak_seeds() << endl;
-                    }
+                    } else {}
                 }
             }
         }
@@ -374,19 +380,13 @@ void MainWindow::perform_pop_dynamics() {
 }
 
 
-// Vectors to store the population counts as sum of all patches at each time step
-std::vector<std::vector<int>> birch_pop_total; // Birch population
-std::vector<std::vector<int>> oak_pop_total;   // Oak population
-std::vector<std::vector<int>> birch_pop_burnt_area_total; // Birch population in burnt area
-std::vector<std::vector<int>> oak_pop_burnt_area_total;   // Oak population in burnt area
-
 void MainWindow::count_populations() {
     std::vector<int> birch_pop = {0, 0, 0, 0, 0};
     std::vector<int> oak_pop = {0, 0, 0, 0, 0};
     std::vector<int> birch_pop_burnt_area = {0, 0, 0, 0, 0};
     std::vector<int> oak_pop_burnt_area = {0, 0, 0, 0, 0};
 
-    for (const auto& p : patches) {
+    for (auto& p : patches) {
         birch_pop[0] += p.N_seeds[0];
         birch_pop[1] += p.N_height_class_1[0];
         birch_pop[2] += p.N_height_class_2[0];
@@ -411,6 +411,18 @@ void MainWindow::count_populations() {
             oak_pop_burnt_area[2] += p.N_height_class_2[1];
             oak_pop_burnt_area[3] += p.N_height_class_3[1];
             oak_pop_burnt_area[4] += p.N_height_class_4[1];
+        } else {
+            birch_pop_burnt_area[0] += 0;
+            birch_pop_burnt_area[1] += 0;
+            birch_pop_burnt_area[2] += 0;
+            birch_pop_burnt_area[3] += 0;
+            birch_pop_burnt_area[4] += 0;
+
+            oak_pop_burnt_area[0] += 0;
+            oak_pop_burnt_area[1] += 0;
+            oak_pop_burnt_area[2] += 0;
+            oak_pop_burnt_area[3] += 0;
+            oak_pop_burnt_area[4] += 0;
         }
     }
     birch_pop_total.push_back(birch_pop);
@@ -499,8 +511,31 @@ void MainWindow::draw_charts(){
     N_oak_burnt_area_hc4_series->setColor(Qt::black); // default color: blue
     N_oak_burnt_area_hc4_series->setName("Height class 4");
 
+    N_birch_seeds_series->clear();
+    N_birch_hc1_series->clear();
+    N_birch_hc2_series->clear();
+    N_birch_hc3_series->clear();
+    N_birch_hc4_series->clear();
 
-//    int number_of_simulation_years    = ui->N_years_spinBox->value();
+    N_birch_burnt_area_seeds_series->clear();
+    N_birch_burnt_area_hc1_series->clear();
+    N_birch_burnt_area_hc2_series->clear();
+    N_birch_burnt_area_hc3_series->clear();
+    N_birch_burnt_area_hc4_series->clear();
+
+    N_oak_seeds_series->clear();
+    N_oak_hc1_series->clear();
+    N_oak_hc2_series->clear();
+    N_oak_hc3_series->clear();
+    N_oak_hc4_series->clear();
+
+    N_oak_burnt_area_seeds_series->clear();
+    N_oak_burnt_area_hc1_series->clear();
+    N_oak_burnt_area_hc2_series->clear();
+    N_oak_burnt_area_hc3_series->clear();
+    N_oak_burnt_area_hc4_series->clear();
+    cout << "debug" << oak_pop_burnt_area_total[0][0] << endl;
+
     for (int time = 0; time < number_of_simulation_years; time++) {
         N_birch_seeds_series->append(time, birch_pop_total[time][0]);
         N_birch_hc1_series->append(time, birch_pop_total[time][1]);
@@ -508,11 +543,11 @@ void MainWindow::draw_charts(){
         N_birch_hc3_series->append(time, birch_pop_total[time][3]);
         N_birch_hc4_series->append(time, birch_pop_total[time][4]);
 
-        N_birch_burnt_area_seeds_series->append(time, birch_pop_burnt_area_total[0][time]);
-        N_birch_burnt_area_hc1_series->append(time, birch_pop_burnt_area_total[1][time]);
-        N_birch_burnt_area_hc2_series->append(time, birch_pop_burnt_area_total[2][time]);
-        N_birch_burnt_area_hc3_series->append(time, birch_pop_burnt_area_total[3][time]);
-        N_birch_burnt_area_hc4_series->append(time, birch_pop_burnt_area_total[4][time]);
+        N_birch_burnt_area_seeds_series->append(time, birch_pop_burnt_area_total[time][0]);
+        N_birch_burnt_area_hc1_series->append(time, birch_pop_burnt_area_total[time][1]);
+        N_birch_burnt_area_hc2_series->append(time, birch_pop_burnt_area_total[time][2]);
+        N_birch_burnt_area_hc3_series->append(time, birch_pop_burnt_area_total[time][3]);
+        N_birch_burnt_area_hc4_series->append(time, birch_pop_burnt_area_total[time][4]);
 
         N_oak_seeds_series->append(time, oak_pop_total[time][0]);
         N_oak_hc1_series->append(time, oak_pop_total[time][1]);
@@ -520,11 +555,11 @@ void MainWindow::draw_charts(){
         N_oak_hc3_series->append(time, oak_pop_total[time][3]);
         N_oak_hc4_series->append(time, oak_pop_total[time][4]);
 
-        N_oak_burnt_area_seeds_series->append(time, oak_pop_burnt_area_total[0][time]);
-//        N_oak_burnt_area_hc1_series->append(time, oak_pop_burnt_area_total[1][time]);
-//        N_oak_burnt_area_hc2_series->append(time, oak_pop_burnt_area_total[2][time]);
-//        N_oak_burnt_area_hc3_series->append(time, oak_pop_burnt_area_total[3][time]);
-//        N_oak_burnt_area_hc4_series->append(time, oak_pop_burnt_area_total[4][time]);
+        N_oak_burnt_area_seeds_series->append(time, oak_pop_burnt_area_total[time][0]);
+        N_oak_burnt_area_hc1_series->append(time, oak_pop_burnt_area_total[time][1]);
+        N_oak_burnt_area_hc2_series->append(time, oak_pop_burnt_area_total[time][2]);
+        N_oak_burnt_area_hc3_series->append(time, oak_pop_burnt_area_total[time][3]);
+        N_oak_burnt_area_hc4_series->append(time, oak_pop_burnt_area_total[time][4]);
     }
 
     N_birch_pop_chart->addSeries(N_birch_seeds_series);
@@ -535,7 +570,7 @@ void MainWindow::draw_charts(){
     N_birch_pop_chart->createDefaultAxes();
     N_birch_pop_chart->setTitle("Birch seed and sapling population");
     N_birch_pop_chart->axisX()->setTitleText("time [years]");
-    N_birch_pop_chart->axisY()->setTitleText("Birch seed and sapling population [N/ha]");
+    N_birch_pop_chart->axisY()->setTitleText("population density [N/ha]");
 
     N_birch_burnt_area_chart->addSeries(N_birch_burnt_area_seeds_series);
     N_birch_burnt_area_chart->addSeries(N_birch_burnt_area_hc1_series);

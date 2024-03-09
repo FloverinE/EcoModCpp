@@ -20,8 +20,8 @@ public:
     int max_seed_production;
     int dispersal_factor;
     QRgb color;                 // color of tree species (green for birch or brown for oak)
-    update_species_params();    // update the parameters based on species assigned in setup procedure
-    set_burnt();
+    void update_species_params();    // update the parameters based on species assigned in setup procedure
+    void set_burnt();
 
 
 private:

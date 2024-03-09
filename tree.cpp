@@ -23,7 +23,7 @@ tree::tree(int id,
     this -> color;
 }
 
-tree::update_species_params() {
+void tree::update_species_params() {
     if (species == 'b') {
         dispersal_factor = 20;
         max_seed_production = 100;
@@ -35,7 +35,7 @@ tree::update_species_params() {
     }
 }
 
-tree::set_burnt() {
+void tree::set_burnt() {
     burnt = true;
 }
 

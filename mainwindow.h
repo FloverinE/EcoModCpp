@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 #include <QtCharts>
+#include <vector>
+#include <QImage>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -15,6 +17,16 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    int number_of_simulation_years = 0;
+
+    // Vectors to store the population counts as sum of all patches at each time step
+    std::vector<std::vector<int>> birch_pop_total;
+    std::vector<std::vector<int>> oak_pop_total;
+    std::vector<std::vector<int>> birch_pop_burnt_area_total;
+    std::vector<std::vector<int>> oak_pop_burnt_area_total;
+
+    int N_trees = 0;
+
 
 private slots:
     void on_setup_button_clicked();
@@ -37,8 +49,10 @@ private:
     QGraphicsScene *scene;
     QImage image;  // Declare image as a member variable
 
-    // Vectors needed to store simulation output
-    int number_of_simulation_years;
+    //
+    QRgb color_seeds = qRgb(255, 255, 255); // white color
+    QRgb color_burnt_area = qRgb(0, 0, 0); // black color
+
 
     // needed for plotting
     QChart *N_birch_pop_chart;
