@@ -257,6 +257,24 @@ per hectare</string>
      <string>Radius of burnt area [m]</string>
     </property>
    </widget>
+   <widget class="QLabel" name="label_6">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>380</y>
+      <width>201</width>
+      <height>91</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>red:   birch trees 
+blue: oak trees 
+
+green: seedling and sapling density 
+
+black: burnt area</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -279,7 +297,7 @@ per hectare</string>
    </widget>
    <widget class="QMenu" name="menuEcological_Modelling_wit_C_Winter_Semester_2023_24">
     <property name="title">
-     <string>Ecological Modelling wit C++ | Winter Semester 2023/24</string>
+     <string>Ecological Modelling with C++ | Winter Semester 2023/24</string>
     </property>
    </widget>
    <addaction name="menuForest_fire_succession_model"/>

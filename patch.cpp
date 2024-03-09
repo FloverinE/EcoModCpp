@@ -23,20 +23,20 @@ void patch::update_N_seeds(int count, char species) {
 //}
 
 
-int patch::get_N_birch_seeds() {
-    // Assuming N_seeds is initialized somewhere
-    return N_seeds[0];
-}
+//int patch::get_N_birch_seeds() {
+//    // Assuming N_seeds is initialized somewhere
+//    return N_seeds[0];
+//}
 
-int patch::get_N_oak_seeds() {
-    // Assuming N_seeds is initialized somewhere
-    return N_seeds[1];
-}
+//int patch::get_N_oak_seeds() {
+//    // Assuming N_seeds is initialized somewhere
+//    return N_seeds[1];
+//}
 
 
-std::vector<int> patch::get_coords() {
-    return x_y_cor;
-}
+//std::vector<int> patch::get_coords() {
+//    return x_y_cor;
+//}
 
 float patch::set_distance_to_tree(int x, int y) {
     float dist_to_tree = sqrt(pow(x - x_y_cor[0], 2) + pow(y - x_y_cor[1], 2));

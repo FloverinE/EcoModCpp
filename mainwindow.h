@@ -26,6 +26,7 @@ public:
     std::vector<std::vector<int>> oak_pop_burnt_area_total;
 
     int N_trees = 0;
+    bool deadwood_removed = false;
 
 
 private slots:
