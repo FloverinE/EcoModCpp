@@ -50,7 +50,7 @@ private:
     QImage image;  // Declare image as a member variable
 
     //
-    QRgb color_seeds = qRgb(255, 255, 255); // white color
+    QRgb color_seeds = qRgb(0, 128, 0); // green color
     QRgb color_burnt_area = qRgb(0, 0, 0); // black color
 
 

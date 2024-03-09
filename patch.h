@@ -17,6 +17,7 @@ public:
     void update_N_seeds(int count, char species);
     int get_N_birch_seeds(); // Added return type 'int'
     int get_N_oak_seeds();   // Added return type 'int'
+    int get_all_N_seeds_saplings();
     void reset_N_seeds();
     std::vector<int> get_coords(); //
     float set_distance_to_tree(int x, int y); //

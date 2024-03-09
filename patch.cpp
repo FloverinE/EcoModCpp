@@ -47,30 +47,16 @@ void patch::set_burnt() {
     burnt = true;
 }
 
-//void patch::perform_pop_dynamics(){
-//    for (int i = 0; i < 2; i++) {
-//        if(N_seeds[i]>0){
-//            for (int j = 0; j < N_seeds[i]; j++) {
-//                // Mortality
-//                if (dist_float(gen) < mortality_rate) {
-//                    N_seeds[i] -= 1;
-//                // Growth into next height class
-//                } else if (dist_float(gen) < growth_rate) {
-//                    N_height_class_1[i] += 1;
-//                    N_seeds[i] -= 1;
-//                }
-//            }
-//        }
-//    }
-//}
 
-
-//N_seeds[i] = static_cast<int>(N_seeds[i] * mortality_rate);
-//}
-//// Growth
-//for (int i = 0; i < 2; i++) {
-//int N_advance = static_cast<int>(N_seeds[i] * growth_rate);
-//N_height_class_1[i] = N_height_class_1[i] + N_advance;
-//N_seeds[i] = N_seeds[i] - N_advance;
-//}
-
+// write function to return the total number of seeds and saplings per patch
+int patch::get_all_N_seeds_saplings(){
+    int N_seeds_saplings = 0;
+    for (int i = 0; i < 2; ++i) {
+        N_seeds_saplings += N_seeds[i];
+        N_seeds_saplings += N_height_class_1[i];
+        N_seeds_saplings += N_height_class_2[i];
+        N_seeds_saplings += N_height_class_3[i];
+        N_seeds_saplings += N_height_class_4[i];
+    }
+    return N_seeds_saplings;
+}
